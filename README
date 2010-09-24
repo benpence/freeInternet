@@ -5,4 +5,8 @@ by Ben Pence
 
 #####
 
-A project
+A proof of concept project to take a step towards free Internet. A customer rents out part of his/her CPU, Memory to an ISP and in return receives bandwidth. Customers who give more time receive more bandwidth.
+
+On the ISP side, the ISP server transfers a binary and some input data to the customer's computer. This binary and data represents work that could be out-sourced from commercial, academic, or scientific entities that require processing power for money. The binary is run on the input data and generates output. The output is transferred back to the ISP's server to be verified. Once verified, the client receives bandwidth allocation.
+
+Customer computers that do more work, over time, accumulate a reputation that ensures them higher priority access to bandwidth during contention.
