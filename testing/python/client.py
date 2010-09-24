@@ -5,19 +5,32 @@ A simple echo client
 """
 
 import socket
+import sys
+
+sys.path.insert(0, "../../helper")
+from logging import Logger	#Logger class
 
 host = 'localhost'
 port = 50000
-
 receiveSize = 1024
 
-socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock = None
 
-socket.connect((host, port))
-socket.send('Hello, world')
+try:
+	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sock.connect((host, port))
 
-data = socket.recv(receiveSize)
+	Logger.log("client", "socket connected\n\thost = '%s'\n\tport = '%s'" % (host, port), visualCue = True)
+except socket.error, (value, message):
+	if sock:
+		sock.close()
 
-socket.close()
+	Logger.log("client", "failed to connect\n\thost = '%s'\n\tport = '%s'" % (host, port), visualCue = True)
+	sys.exit(1)
 
-print 'Received:', data
+sock.send('Hello, world')
+data = sock.recv(receiveSize)
+
+Logger.log("client", "sent '%s', received '%s'" % ('Hello, world', data))
+
+sock.close()
