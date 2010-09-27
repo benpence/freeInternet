@@ -31,6 +31,6 @@ except socket.error, (value, message):
 sock.send('Hello, world')
 data = sock.recv(receiveSize)
 
-Logger.log("client", "sent '%s', received '%s'" % ('Hello, world', data))
+Logger.log("client", "sent '%s', received '%s'" % ('Hello, world', data), visualCue = True)
 
 sock.close()
