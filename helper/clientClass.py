@@ -4,30 +4,23 @@
 Client - class for connecting on a port for connection
 """
 
-import sys
-
-sys.path.insert(0, "../helper")
-from logging import Logger	#Logger class
-
+from connectionClass import Connection
 import socket
 
-class Client:
-	clients = {}
-	count = 0
+class Client(Connection):
+	DEFAULT_HOST = 'localhost'
+	DEFAULT_PORT = 5556
 
-	def __init__(self, host = 'localhost', port = 5556, receiveSize = 1024):
-		self.host = host
-		self.port = port
-
-		self.id = self.count			#client identifier for logging
-		Client.count += 1				
-		Client.clients[self.id] = self	#singelton
+	def __init__(self, chunkSize = Connection.CHUNK_SIZE, output = True):
+		super(Client, self).__init__(self, chunkSize = chunkSize, output = output)
 
 	# Set up connection to server
 	#	False 	-> Connection failed
 	#	True 	-> Connection succeeded
-	def connect(self, host = self.host, port = self.port):
-		self.sock = None
+	def connect(self, host = Client.DEFAULT_HOST, port = Client.DEFAULT_PORT):
+		# Already connected?
+		if self.sock:
+			sock.close()
 
 		# Connect to server
 		try:
@@ -38,26 +31,11 @@ class Client:
 			if self.sock:
 				self.sock.close()
 
-			Logger.log("client%3d", "failed to connect\n\tmessage = '%s'\n\thost = '%s'\n\tport = '%s'" % (message, host, port), visualCue = True)
+			self.log("client%3d", "failed to connect\n\tmessage = '%s'\n\thost = '%s'\n\tport = '%s'" % (self.id, message, host, port))
 			return False
 
-		Logger.log("client%3d", "socket connected\n\thost = '%s'\n\tport = '%s'" % (host, port), visualCue = True)
+		self.log("client%3d", "socket connected\n\thost = '%s'\n\tport = '%s'" % (self.id, host, port))
 		return True
 	
-	# Public method allows sending of files
-	#	False 	-> File send faild
-	#	True 	-> File send succeeded
 	def sendFile(filename, path = None, host = self.host, port = self.port):
-		# Connect
-		if not self.connect(host = host, port = port):
-			return False #Not connected properly
-
-		## Send file ##
-		sock.send('Hello, world')
-		data = sock.recv(receiveSize)
-
-		Logger.log("client%3d", "sent '%s', received '%s'" % ('Hello, world', data))
-		##           ##
-
-		# Disconnect
-		self.sock.close()
+		pass
