@@ -1,19 +1,20 @@
 #!/usr/bin/python
 
-"""
-Server - class for listening on a port for connection
-"""
-
-from connectionClass import Connection
+import connectionClass
 import socket
 
-from threading import Thread	# for threading
+import threading	# for threading
 
-BACKLOG 		= 5 # max number of connections; 5 is standard
-DEFAULT_HOST	= ''
-DEFAULT_PORT	= 5555
+_BACKLOG 		= 5 # max number of connections; 5 is standard
+_DEFAULT_HOST	= ''
+_DEFAULT_PORT	= 5555
 
-class Server(Connection):
+class Server(connectionClass.Connection):
+	"""
+	Server(chunkSize=#, output=boolean
+		listens on a port
+	"""
+
 
 	def __init__(self, **kwargs):
 		super(Server, self).__init__(**kwargs)
@@ -23,7 +24,7 @@ class Server(Connection):
 	# Set up for connections
 	#	False 	-> Bind failed
 	#	True 	-> Bind succeeded
-	def bind(self, host = DEFAULT_HOST, port = DEFAULT_PORT):
+	def bind(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
 		# Already binded?
 		if self.sock:
 			self.sock.close()
@@ -33,15 +34,24 @@ class Server(Connection):
 		try:
 			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.sock.bind((host, port))
-			self.sock.listen(BACKLOG)
+			self.sock.listen(_BACKLOG)
 
 		except socket.error, (value, message): #Failed
 			if self.sock:
 				self.sock.close()
-			self.log("server%03d" % self.id, "socket failed to bind\n\tmessage = '%s'\n\thost = '%s'\n\tport = '%s'" % (message, host, port), messageType = "ERR")
+			self.log(	"server%03d" % self.id,
+						"socket failed to bind\n\t"
+						"message = '%s'\n\t"
+						"host = '%s'\n\t"
+						"port = '%s'" % (message, host, port),
+						messageType = "ERR")
+
 			return False
 
-		self.log("server%03d" % self.id, "socket created\n\thost = '%s'\n\tport = '%s'" % (host, port))
+		self.log(		"server%03d" % self.id,
+						"socket created\n\t"
+						"host = '%s'\n\t"
+						"port = '%s'" % (host, port))
 
 
 		# Running loop #
@@ -51,7 +61,10 @@ class Server(Connection):
 			data = client.recv(self.chunkSize)
 
 			if data:
-				self.log("server%03d" % self.id, "data accepted. Creating server thread\n\thost = '%s'\n\tport = '%s''" % (host, port))
+				self.log(	"server%03d" % self.id,
+							"data accepted. Creating server thread\n\t"
+							"host = '%s'\n\t"
+							"port = '%s''" % (host, port))
 
 				newThread = ServerThread(client, data, self.threadCount, self)
 				self.threadCount += 1
@@ -66,18 +79,19 @@ class Server(Connection):
 	def close(self):
 		self.running = False
 
-class ServerThread(Thread):
+class ServerThread(threading.Thread):
 	def __init__(self, sock, data, id, parent):
 		self.sock = sock
 		self.id = id
 		self.data = data
 		self.parent = parent
 
-		Thread.__init__(self)
+		threading.Thread.__init__(self)
 
 	def run(self):
 		self.sock.send(self.data)
-		self.parent.log("server%03d" % self.parent.id, "thread%03d sent '%s' to client" % (self.id, self.data))
+		self.parent.log("server%03d" % self.parent.id,
+						"thread%03d sent '%s' to client" % (self.id, self.data))
 
 		self.sock.close()
 

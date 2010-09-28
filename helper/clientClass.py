@@ -1,27 +1,33 @@
 #!/usr/bin/python
 
-"""
-Client - connect to a server and send files; look at 'main' function for usage
-"""
-
-from connectionClass import Connection
+import connectionClass
 import socket
 
 from threading import Thread	# for threading
 
-class Client(Connection, Thread):
-	DEFAULT_HOST = 'localhost'
-	DEFAULT_PORT = 5555
+class Client(connectionClass.Connection, Thread):
+	"""
+	Client(	chunkSize=number,
+			output=boolean)
+
+		
+	"""
+
+	_DEFAULT_HOST = 'localhost'
+	_DEFAULT_PORT = 5555
 
 	def __init__(self, **kwargs):
 		super(Client, self).__init__(**kwargs)
 
 		self.queue = []
 
-	# Set up connection to server
-	#	False 	-> Connection failed
-	#	True 	-> Connection succeeded
-	def connect(self, host = DEFAULT_HOST, port = DEFAULT_PORT):
+	def connect(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+		"""
+		Set up connection to server
+			False 	-> Connection failed
+			True 	-> Connection succeeded
+		"""
+
 		# Already connected?
 		if self.sock:
 			self.sock.close()
@@ -36,17 +42,25 @@ class Client(Connection, Thread):
 			if self.sock:
 				self.sock.close()
 
-			self.log("client%03d" % self.id, "failed to connect\n\tmessage = '%s'\n\thost = '%s'\n\tport = '%s'" % (message, host, port), messageType = "ERR")
+			self.log(	"client%03d" % self.id,
+						"failed to connect\n\t"
+						"message = '%s'\n\t"
+						"host = '%s'\n\t"
+						"port = '%s'" % (message, host, port),
+						messageType="ERR")
 			return False
 
-		self.log("client%03d" % self.id, "socket connected\n\thost = '%s'\n\tport = '%s'" % (host, port))
+		self.log(	"client%03d" % self.id,
+					"socket connected\n\t"
+					"host = '%s'\n\t"
+					"port = '%s'" % (host, port))
 
-		# File transfer #
+		# File transfer
 		while self.running and len(self.queue) > 0:
 			if self.sock:
 
 				# Returns true on successful send, otherwise try send again
-				if self.sendFileFromQueue(self.queue[0]):
+				if self.__sendFileFromQueue(self.queue[0]):
 					self.queue.pop(0)
 
 		self.sock.close()
@@ -57,11 +71,13 @@ class Client(Connection, Thread):
 	def sendFile(self, filepath):
 		self.queue.append(filepath)
 
-	def sendFileFromQueue(self, filepath):
+	def __sendFileFromQueue(self, filepath):
 		self.sock.send(filepath)
 		data = self.sock.recv(self.chunkSize)
 
-		self.log("client%03d" % self.id, "\n\tsent '%s\n\treceived '%s'" % (filepath, data))
+		self.log(	"client%03d" % self.id,
+					"sent '%s\n\t"
+					"received '%s'" % (filepath, data))
 		return True
 
 	def close(self):

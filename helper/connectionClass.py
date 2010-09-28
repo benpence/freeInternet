@@ -1,23 +1,21 @@
 #!/usr/bin/python
 
-"""
-Connection - class for listening on a port for connection
-"""
-
-#Add helper libraries
 import sys
 
 sys.path.insert(0, "../helper")
-from logging import Logger	#Logger class
+import logging	#Logger class
 
-CHUNK_SIZE = 4096
+_CHUNK_SIZE = 4096
 
 class Connection(object):
+	"""
+	Connection(chunkSize = #, output = boolean)
+	"""
 
-	instances = {}
+	__instances = {}
 	count = 0
 
-	def __init__(self, chunkSize = CHUNK_SIZE, output = True):
+	def __init__(self, chunkSize=_CHUNK_SIZE, output=True):
 		self.chunkSize = chunkSize
 		self.output = output
 
@@ -26,7 +24,7 @@ class Connection(object):
 
 		self.id = Connection.count				# identifier for logging
 		Connection.count += 1
-		Connection.instances[self.id] = self	# singleton
+		Connection.__instances[self.id] = self	# singleton
 
 	def close(self):
 		pass
@@ -35,8 +33,11 @@ class Connection(object):
 		# If not specified, go by the object's default value for visualCue (output)
 		if 'visualCue' not in kargs:
 			kargs['visualCue'] = self.output
-		Logger.log(*args, **kargs)
+
+		logging.Logger.log(*args, **kargs)
 
 if __name__ == "__main__":
 	hey = Connection()
-	hey.log("program", "THIS IS A TEST", visualCue = True)
+	hey.log("program",
+			"THIS IS A TEST",
+			visualCue=True)
