@@ -13,7 +13,7 @@ class Logger:
 
 	# Writes message to respective log file
 	def log(program, message, messageType = "LOG", visualCue = False):
-		log = "%s\t%s\t%s:\t%s" % (datetime.datetime.now(), messageType, program, message)
+		log = "%s %s %s: %s" % (datetime.datetime.now(), messageType, program, message)
 
 		## Output to file ##
 		#Open file if not already open

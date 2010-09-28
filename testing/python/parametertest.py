@@ -17,3 +17,10 @@ def passFunction2(*args, **kargs):
 
 passFunction2(1, 2, tea = 3)
 passFunction2(1, 2, tea = 3, he = 4)
+
+class A(object):
+	X = 50
+	def __init__(self, thing = X):
+		print thing
+
+A()

@@ -10,17 +10,14 @@ import sys
 sys.path.insert(0, "../helper")
 from logging import Logger	#Logger class
 
-from threading import Thread	# for threading
+CHUNK_SIZE = 4096
 
-class Connection(Thread):
-	CHUNK_SIZE = 4096
+class Connection(object):
 
 	instances = {}
 	count = 0
 
 	def __init__(self, chunkSize = CHUNK_SIZE, output = True):
-		Thread.__init__(self)
-
 		self.chunkSize = chunkSize
 		self.output = output
 
