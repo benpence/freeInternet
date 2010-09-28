@@ -1,18 +1,25 @@
 #!/usr/bin/python
 
-"""
-Logging
-"""
-
 import datetime
-import os.path
 
 class Logger:
+	"""
+	Logger(	program, # App/thread that is logging
+			message, # String to log
+			messateType=, # Sting values 'LOG' or 'ERR'
+			visualCue=) # Print to terminal?
+
+		Generic logging class. log() is a class function.
+	"""
+
 	logFiles = {}
 	visualCues = True
 
-	# Writes message to respective log file
-	def log(program, message, messageType = "LOG", visualCue = False):
+	def log(program, message, messageType="LOG", visualCue=False):
+		"""
+		writes message to respective log file
+		"""
+
 		log = "%s %s %s: %s" % (datetime.datetime.now(), messageType, program, message)
 
 		## Output to file ##

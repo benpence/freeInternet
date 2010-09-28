@@ -7,8 +7,8 @@ from threading import Thread	# for threading
 
 class Client(connectionClass.Connection, Thread):
 	"""
-	Client(	chunkSize=number,
-			output=boolean)
+	Client(	chunkSize=, # size of data that connection will receive
+			output=) # boolean, logging printed to shell?
 
 		
 	"""

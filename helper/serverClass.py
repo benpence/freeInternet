@@ -3,16 +3,19 @@
 import connectionClass
 import socket
 
-import threading	# for threading
+import threading # for threading
 
-_BACKLOG 		= 5 # max number of connections; 5 is standard
-_DEFAULT_HOST	= ''
-_DEFAULT_PORT	= 5555
+_BACKLOG = 5 # max number of connections; 5 is standard
+_DEFAULT_HOST = ''
+_DEFAULT_PORT = 5555
 
 class Server(connectionClass.Connection):
 	"""
-	Server(chunkSize=#, output=boolean
-		listens on a port
+	Server(	chunkSize=, # size of data that connection will receive
+			output=) # boolean, logging printed to shell?
+
+		listens on specified interface (IP), port for connections
+		passes successful connections to ServerThread threads
 	"""
 
 
@@ -21,10 +24,13 @@ class Server(connectionClass.Connection):
 
 		self.threadCount = 0
 
-	# Set up for connections
-	#	False 	-> Bind failed
-	#	True 	-> Bind succeeded
 	def bind(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+		"""
+		Set up for connections
+		 	False 	-> Bind failed
+			True 	-> Bind succeeded
+		"""
+
 		# Already binded?
 		if self.sock:
 			self.sock.close()
@@ -55,7 +61,6 @@ class Server(connectionClass.Connection):
 
 
 		# Running loop #
-		print "Running = ", self.running
 		while self.running and self.sock:
 			client, address = self.sock.accept()
 			data = client.recv(self.chunkSize)
@@ -80,6 +85,12 @@ class Server(connectionClass.Connection):
 		self.running = False
 
 class ServerThread(threading.Thread):
+	"""
+	ServerThread(	sock, # The client socket
+					data, # The data sent across the socket
+					id, # A number that is unique to this thread; used for logging
+					parent) # Reference to parent process; used for logging
+	"""
 	def __init__(self, sock, data, id, parent):
 		self.sock = sock
 		self.id = id
