@@ -3,7 +3,7 @@
 import serverClass
 import os
 
-_DEFAULT_PATH = "./"
+_DEFAULT_PATH = ""
 _JOIN_CHARACTER = "|"
 
 class FileServer(serverClass.Server):
@@ -12,8 +12,15 @@ class FileServer(serverClass.Server):
 				filepath=, # location to put/look for files
 				output=, boolean, logging printed to shell?
 
-			listens on specified interfac3 (IP), port for connections
-			passes successful connections to FileServerThreads
+		listens on specified interfac3 (IP), port for connections
+		passes successful connections to FileServerThreads
+
+		transfer protocol client->server header is "A|B|C|" where
+			A = "up" (client->server) or "down" (server->client)
+			B = size of file to be transfered in bytes
+				If B left blank, server sends "B|..." for filesize
+			C = name of file to be transfered
+			| = field delimiter 
 	"""
 
 	def __init__(self, **kwargs):
@@ -21,7 +28,7 @@ class FileServer(serverClass.Server):
 		# kwargs will always be adequate
 		if 'filepath' in kwargs:
 			self.filepath = kwargs.get('filepath')
-			kwargs.pop('file')
+			kwargs.pop('filepath')
 		else:
 			self.filepath = _DEFAULT_PATH
 
@@ -52,32 +59,32 @@ class FileServerThread(serverClass.ServerThread):
 		self.filepath = filepath
 
 	def run(self):
-		direction, filesize, filename = data.split(_JOIN_CHARACTER)
+		direction, filesize, filename, rest = self.data.split(_JOIN_CHARACTER)
 
 		# Client->Server
 		if direction == "up":
 			destination = os.path.join(self.filepath, filename)
 
-			bytesLeft = filesize
+			bytesLeft = filesize = int(filesize)
 
+			# Receive and write the bytes by chunkSize
 			with open(destination, 'wb') as file:
 				while bytesLeft > 0:
-					if bytesLeft < self.chunkSize:
-						file.write(self.client.recv(self.chunkSize))
-						bytesLeft -= self.chunkSize
-					else:
+					if bytesLeft < self.server.chunkSize:
 						file.write(self.client.recv(bytesLeft))
-				
+					else:
+						file.write(self.client.recv(self.server.chunkSize))
+					bytesLeft -= self.server.chunkSize
 
 				self.server.log("server%03d" % self.server.id,
-								"thread%03d received and wrote %d bytes to '%s'" % (self.id, self.data, destination))
+								"thread%03d received and wrote %d bytes to '%s'" % (self.id, filesize, destination))
 
 		# Server->Client
 		elif direction == "down":
 			source = os.path.join(self.filepath, filename)
 
 			# Nonexistent file?
-			if not os.path.exists(filename):
+			if not os.path.exists(source):
 				self.server.log("server%03d" % self.server.id,
 								"thread%03d path '%s' not found for writing" % filepath,
 								messageType = "ERR")
@@ -85,16 +92,16 @@ class FileServerThread(serverClass.ServerThread):
 
 			# Tell client the filesize
 			filesize = bytesLeft = os.path.getsize(source)
-			self.client.send(filesize + _JOIN_CHARACTER)
+			self.client.send(self.server.pad(str(filesize) + _JOIN_CHARACTER))
 
 			# Transfer pieces to client
 			with open(source, 'rb') as file:
 				while bytesLeft > 0:
-					if bytesLeft < self.chunkSize:
-						self.client.send(file.read(self.chunkSize))
-						bytesLeft -= self.chunkSize
+					if bytesLeft < self.server.chunkSize:
+						self.client.send(file.read(bytesLeft))
 					else:
-						self.client.send(bytesLeft)
+						self.client.send(file.read(self.server.chunkSize))
+					bytesLeft -= self.server.chunkSize
 
 			self.server.log("server%03d" % self.server.id,
 							"thread%03d sent %d bytes of '%s' to client" % (self.id, filesize, source))
@@ -102,12 +109,12 @@ class FileServerThread(serverClass.ServerThread):
 		# Bad protocol
 		else:
 			self.server.log("server%03d" % self.server.id,
-							"thread%03d received bad protocol" % self.id
-							"\n\tdata = '%s'",
+							"thread%03d received bad protocol"
+							"\n\tdata = '%s'" % self.id,
 							messageType = "ERR")
 
 		self.client.close()
 
 if __name__ == "__main__":
-	server = FileServer()
-	server.bind()
+	server = FileServer(filepath="./serverFiles/")
+	server.listen()

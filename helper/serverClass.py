@@ -24,14 +24,16 @@ class Server(connectionClass.Connection):
 
 		self.threadCount = 0
 
-	def bind(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+	def listen(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
 		"""
-		Set up for connections
-		 	False 	-> Bind failed
-			True 	-> Bind succeeded
+		listen(	host=, # IP or domain name to listen on
+				port=, # port to listen on)
+
+			start listening for connections
+			pass off connection to createThread()
 		"""
 
-		# Already binded?
+		# Already listening
 		if self.sock:
 			self.sock.close()
 			self.sock = None
@@ -46,7 +48,7 @@ class Server(connectionClass.Connection):
 			if self.sock:
 				self.sock.close()
 			self.log(	"server%03d" % self.id,
-						"socket failed to bind\n\t"
+						"socket failed to listen\n\t"
 						"message = '%s'\n\t"
 						"host = '%s'\n\t"
 						"port = '%s'" % (message, host, port),
@@ -78,9 +80,15 @@ class Server(connectionClass.Connection):
 		return True
 
 	def createThread(self, client, data, id, server):
+		"""
+		createThread(	client, # The client socket
+						data, # The data sent across the socket
+						id, # A number that is unique to this thread; used for logging
+						server) # Reference to server process; used for logging
+		"""
 		pass
 
-	def close(self):
+	def stopListen(self):
 		self.running = False
 
 class ServerThread(threading.Thread):
@@ -102,6 +110,5 @@ class ServerThread(threading.Thread):
 		pass
 
 if __name__ == "__main__":
-	serv = Server()
-	serv.bind()
-	serv.run()
+	server = Server()
+	server.listen()

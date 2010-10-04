@@ -49,8 +49,7 @@ class Client(connectionClass.Connection):
 					"\n\thost = '%s'"
 					"\n\tport = '%s'" % (host, port))
 
-		while self.running and self.sock:
-			self.connectActions(self.sock)
+		self.connectActions()
 
 		self.sock.close()
 		self.sock = None
@@ -60,10 +59,6 @@ class Client(connectionClass.Connection):
 	def connectActions(self):
 		pass
 
-	def close(self):
-		self.running = False
-
 if __name__ == "__main__":
 	cli = Client()
-	cli.sendFile("Hello, world")
 	cli.connect()
