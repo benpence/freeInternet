@@ -59,8 +59,6 @@ class Server(connectionClass.Connection):
 						"host = '%s'\n\t"
 						"port = '%s'" % (host, port))
 
-
-		# Running loop #
 		while self.running and self.sock:
 			client, address = self.sock.accept()
 			data = client.recv(self.chunkSize)
@@ -71,41 +69,39 @@ class Server(connectionClass.Connection):
 							"host = '%s'\n\t"
 							"port = '%s''" % (host, port))
 
-				newThread = ServerThread(client, data, self.threadCount, self)
+				self.createThread(client, data, self.threadCount, self)
 				self.threadCount += 1
-
-				newThread.start()
 
 		self.sock.close()
 		self.sock = None
 
 		return True
 
+	def createThread(self, client, data, id, server):
+		pass
+
 	def close(self):
 		self.running = False
 
 class ServerThread(threading.Thread):
 	"""
-	ServerThread(	sock, # The client socket
+	ServerThread(	client, # The client socket
 					data, # The data sent across the socket
 					id, # A number that is unique to this thread; used for logging
-					parent) # Reference to parent process; used for logging
+					server) # Reference to server process; used for logging
 	"""
-	def __init__(self, sock, data, id, parent):
-		self.sock = sock
+	def __init__(self, client, data, id, server):
+		self.client = client
 		self.id = id
 		self.data = data
-		self.parent = parent
+		self.server = server
 
 		threading.Thread.__init__(self)
 
 	def run(self):
-		self.sock.send(self.data)
-		self.parent.log("server%03d" % self.parent.id,
-						"thread%03d sent '%s' to client" % (self.id, self.data))
-
-		self.sock.close()
+		pass
 
 if __name__ == "__main__":
 	serv = Server()
 	serv.bind()
+	serv.run()

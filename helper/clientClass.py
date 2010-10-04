@@ -3,14 +3,10 @@
 import connectionClass
 import socket
 
-from threading import Thread	# for threading
-
-class Client(connectionClass.Connection, Thread):
+class Client(connectionClass.Connection):
 	"""
 	Client(	chunkSize=, # size of data that connection will receive
 			output=) # boolean, logging printed to shell?
-
-		
 	"""
 
 	_DEFAULT_HOST = 'localhost'
@@ -18,8 +14,6 @@ class Client(connectionClass.Connection, Thread):
 
 	def __init__(self, **kwargs):
 		super(Client, self).__init__(**kwargs)
-
-		self.queue = []
 
 	def connect(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
 		"""
@@ -43,42 +37,28 @@ class Client(connectionClass.Connection, Thread):
 				self.sock.close()
 
 			self.log(	"client%03d" % self.id,
-						"failed to connect\n\t"
-						"message = '%s'\n\t"
-						"host = '%s'\n\t"
-						"port = '%s'" % (message, host, port),
+						"failed to connect"
+						"\n\tmessage = '%s'"
+						"\n\thost = '%s'"
+						"\n\tport = '%s'" % (message, host, port),
 						messageType="ERR")
 			return False
 
 		self.log(	"client%03d" % self.id,
-					"socket connected\n\t"
-					"host = '%s'\n\t"
-					"port = '%s'" % (host, port))
+					"socket connected"
+					"\n\thost = '%s'"
+					"\n\tport = '%s'" % (host, port))
 
-		# File transfer
-		while self.running and len(self.queue) > 0:
-			if self.sock:
-
-				# Returns true on successful send, otherwise try send again
-				if self.__sendFileFromQueue(self.queue[0]):
-					self.queue.pop(0)
+		while self.running and self.sock:
+			self.connectActions(self.sock)
 
 		self.sock.close()
 		self.sock = None
 
 		return True
 
-	def sendFile(self, filepath):
-		self.queue.append(filepath)
-
-	def __sendFileFromQueue(self, filepath):
-		self.sock.send(filepath)
-		data = self.sock.recv(self.chunkSize)
-
-		self.log(	"client%03d" % self.id,
-					"sent '%s\n\t"
-					"received '%s'" % (filepath, data))
-		return True
+	def connectActions(self):
+		pass
 
 	def close(self):
 		self.running = False
