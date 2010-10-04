@@ -48,41 +48,38 @@ class Server(connectionClass.Connection):
 			if self.sock:
 				self.sock.close()
 			self.log(	"server%03d" % self.id,
-						"socket failed to listen\n\t"
-						"message = '%s'\n\t"
-						"host = '%s'\n\t"
-						"port = '%s'" % (message, host, port),
+						"socket failed to listen"
+						"\n\tmessage = '%s'"
+						"\n\thost = '%s'"
+						"\n\tport = '%s'" % (message, host, port),
 						messageType = "ERR")
 
 			return False
 
 		self.log(		"server%03d" % self.id,
-						"socket created\n\t"
-						"host = '%s'\n\t"
-						"port = '%s'" % (host, port))
+						"socket created"
+						"\n\thost = '%s'"
+						"\n\tport = '%s'" % (host, port))
 
 		while self.running and self.sock:
 			client, address = self.sock.accept()
-			data = client.recv(self.chunkSize)
 
-			if data:
-				self.log(	"server%03d" % self.id,
-							"data accepted. Creating server thread\n\t"
-							"host = '%s'\n\t"
-							"port = '%s''" % (host, port))
+			self.log(	"server%03d" % self.id,
+						"Creating server thread"
+						"\n\thost = '%s'"
+						"\n\tport = '%s''" % (host, port))
 
-				self.createThread(client, data, self.threadCount, self)
-				self.threadCount += 1
+			self.createThread(client, self.threadCount, self)
+			self.threadCount += 1
 
 		self.sock.close()
 		self.sock = None
 
 		return True
 
-	def createThread(self, client, data, id, server):
+	def createThread(self, client, id, server):
 		"""
 		createThread(	client, # The client socket
-						data, # The data sent across the socket
 						id, # A number that is unique to this thread; used for logging
 						server) # Reference to server process; used for logging
 		"""
@@ -94,14 +91,12 @@ class Server(connectionClass.Connection):
 class ServerThread(threading.Thread):
 	"""
 	ServerThread(	client, # The client socket
-					data, # The data sent across the socket
 					id, # A number that is unique to this thread; used for logging
 					server) # Reference to server process; used for logging
 	"""
-	def __init__(self, client, data, id, server):
+	def __init__(self, client, id, server):
 		self.client = client
 		self.id = id
-		self.data = data
 		self.server = server
 
 		threading.Thread.__init__(self)

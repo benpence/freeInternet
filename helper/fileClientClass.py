@@ -15,12 +15,14 @@ class FileClient(clientClass.Client):
 		Enqueue files to be send/received with enqueueTransfer()
 		Start transfer by calling connect()
 
-		transfer protocol client->server header is "A|B|C|" where
+		transfer protocol client->server header is "A|B|C|..." where
 			A = "up" (client->server) or "down" (server->client)
 			B = size of file to be transfered in bytes
 				If B left blank, server sends "B|..." for filesize
 			C = name of file to be transfered
 			| = field delimiter 
+
+			when done, send "done|||..."
 	"""
 
 	def __init__(self, **kwargs):
@@ -36,7 +38,6 @@ class FileClient(clientClass.Client):
 
 		self.fileQueue = []
 
-	# 
 	def connectActions(self):
 		for transfer in self.fileQueue:
 			direction, filename = transfer
@@ -62,7 +63,7 @@ class FileClient(clientClass.Client):
 												""])
 				self.sock.send(self.pad(header))
 
-				# Transfer pieces to client
+				# Transfer pieces to server
 				with open(source, 'rb') as file:
 					while bytesLeft > 0:
 						if bytesLeft < self.chunkSize:
@@ -104,13 +105,17 @@ class FileClient(clientClass.Client):
 				self.log(	"client%03d" % self.id,
 							"bad protocol"
 							"\n\tdirection = '%s'"
-							"\n\tfilename = '%s'" % (direction, filename))
+							"\n\tfilename = '%s'" % (direction, filename),
+							messageType = "ERR")
 
 				return False
 
-			self.fileQueue.pop(0)
+		header = _JOIN_CHARACTER.join(["done", "", "", ""])
+		self.sock.send(self.pad(header))
 
-			return True
+		self.fileQueue = []
+
+		return True
 
 	def enqueueTransfer(self, direction, filename):
 		"""
@@ -121,7 +126,6 @@ class FileClient(clientClass.Client):
 
 if __name__ == "__main__":
 	client = FileClient(output=True, filepath="./clientFiles/")
-	client.enqueueTransfer("down", "playmobile")
-	client.connect()
-	client.enqueueTransfer("up", "playmobile2")
+	client.enqueueTransfer("down", "playmobile1")
+	client.enqueueTransfer("down", "playmobile2")
 	client.connect()
