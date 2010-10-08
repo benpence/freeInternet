@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import classMethods
+
 import clientClass
 import os
 
@@ -8,9 +10,8 @@ _JOIN_CHARACTER = "|"
 
 class FileClient(clientClass.Client):
 	"""
-	FileClient(	chunkSize=, # size of data that connection will send/receive
-				filepath=, # location to put/look for files
-				output=, # boolean, logging printed to shell?
+	FileClient(	filepath=, # location to put/look for files,
+				kwargs...)
 
 		Enqueue files to be send/received with enqueueTransfer()
 		Start transfer by calling connect()
@@ -26,13 +27,9 @@ class FileClient(clientClass.Client):
 	"""
 
 	def __init__(self, **kwargs):
-		# In case the parent/grandparent keyword arguments change,
-		# kwargs will always be adequate
-		if 'filepath' in kwargs:
-			self.filepath = kwargs.get('filepath')
-			kwargs.pop('filepath')
-		else:
-			self.filepath = _DEFAULT_PATH
+		classMethods.extract(	self,
+								{'filepath' : _DEFAULT_PATH},
+								kwargs)
 
 		super(FileClient, self).__init__(**kwargs)
 
@@ -126,6 +123,5 @@ class FileClient(clientClass.Client):
 
 if __name__ == "__main__":
 	client = FileClient(output=True, filepath="./clientFiles/")
-	client.enqueueTransfer("down", "playmobile1")
-	client.enqueueTransfer("down", "playmobile2")
+	client.enqueueTransfer("down", "test")
 	client.connect()

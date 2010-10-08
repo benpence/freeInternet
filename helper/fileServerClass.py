@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
+import classMethods # Helper class
+
 import serverClass
+
 import os
 
 _DEFAULT_PATH = ""
@@ -8,9 +11,9 @@ _JOIN_CHARACTER = "|"
 
 class FileServer(serverClass.Server):
 	"""
-	FileServer(	chunkSize=, # size of data that connection will send/receive
-				filepath=, # location to put/look for files
-				output=, boolean, logging printed to shell?
+	FileServer(	filepath=, # location to put/look for files,
+				kwargs...)
+
 
 		listens on specified interfac3 (IP), port for connections
 		passes successful connections to FileServerThreads
@@ -24,13 +27,9 @@ class FileServer(serverClass.Server):
 	"""
 
 	def __init__(self, **kwargs):
-		# In case the parent/grandparent keyword arguments change,
-		# kwargs will always be adequate
-		if 'filepath' in kwargs:
-			self.filepath = kwargs.get('filepath')
-			kwargs.pop('filepath')
-		else:
-			self.filepath = _DEFAULT_PATH
+		classMethods.extract(	self,
+								{'filepath' : _DEFAULT_PATH},
+								kwargs)
 
 		super(FileServer, self).__init__(**kwargs)
 
