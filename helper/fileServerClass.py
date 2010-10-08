@@ -26,12 +26,10 @@ class FileServer(serverClass.Server):
 			| = field delimiter 
 	"""
 
-	def __init__(self, **kwargs):
-		classMethods.extract(	self,
-								{'filepath' : _DEFAULT_PATH},
-								kwargs)
-
+	def __init__(self, filepath=_DEFAULT_PATH, **kwargs):
 		super(FileServer, self).__init__(**kwargs)
+
+		self.filepath = filepath
 
 	# method called from parent to handle connection
 	def createThread(self, client, id, server):

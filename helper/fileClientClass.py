@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import classMethods
-
 import clientClass
 import os
 
@@ -26,13 +24,10 @@ class FileClient(clientClass.Client):
 			when done, send "done|||..."
 	"""
 
-	def __init__(self, **kwargs):
-		classMethods.extract(	self,
-								{'filepath' : _DEFAULT_PATH},
-								kwargs)
-
+	def __init__(self, filepath=_DEFAULT_PATH, **kwargs):
 		super(FileClient, self).__init__(**kwargs)
 
+		self.filepath = filepath
 		self.fileQueue = []
 
 	def connectActions(self):

@@ -12,9 +12,11 @@ class A(object):
 		self.ho = ho
 
 class B(A):
-	def __init__(self, **kwargs):
-		extract(self, ['heen'], kwargs)
+	def __init__(self, heen=5, **kwargs):
+#extract(self, ['heen'], kwargs)
 		super(B, self).__init__(**kwargs)
+
+		self.heen = heen
 				
 
 test = B(hey=2, ho=3, heen=4)
