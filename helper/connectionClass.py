@@ -2,7 +2,6 @@
 
 import sys
 
-sys.path.insert(0, "../helper")
 import logging	#Logger class
 
 _CHUNK_SIZE = 4096

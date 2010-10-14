@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import classMethods # Helper class
+from constants import _ROOT_DIRECTORY
 
 import serverClass
 
@@ -52,7 +53,7 @@ class FileServerThread(serverClass.ServerThread):
 	def __init__(self, client, id, server, filepath):
 		super(FileServerThread, self).__init__(client, id, server)
 
-		self.filepath = filepath
+		self.filepath = "%s%s" % (_ROOT_DIRECTORY, filepath)
 
 	def run(self):
 		done = False

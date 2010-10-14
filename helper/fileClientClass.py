@@ -3,6 +3,8 @@
 import clientClass
 import os
 
+from constants import _ROOT_DIRECTORY
+
 _DEFAULT_PATH = ""
 _JOIN_CHARACTER = "|"
 
@@ -27,7 +29,7 @@ class FileClient(clientClass.Client):
 	def __init__(self, filepath=_DEFAULT_PATH, **kwargs):
 		super(FileClient, self).__init__(**kwargs)
 
-		self.filepath = filepath
+		self.filepath = "%s%s" % (_ROOT_DIRECTORY, filepath)
 		self.fileQueue = []
 
 	def connectActions(self):
@@ -40,10 +42,11 @@ class FileClient(clientClass.Client):
 
 				# Nonexistent file?
 				if not os.path.exists(source):
-					self.log(	"client%03d" % self.client.id,
+					self.log(	"client%03d" % self.id,
 								"file to send not found"
 								"\n\tdirection = '%s'"
-								"\n\tsource = '%s'" % (direction, source))
+								"\n\tsource = '%s'" % (direction, source),
+								messageType="ERR")
 					return False
 
 				filesize = bytesLeft = os.path.getsize(source)
