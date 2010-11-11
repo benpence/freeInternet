@@ -22,7 +22,7 @@ class Server(connectionClass.Connection):
 	def __init__(self, **kwargs):
 		super(Server, self).__init__(**kwargs)
 
-		self.threadCount = 0
+		self.childCount = 0
 
 	def listen(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
 		"""
@@ -61,26 +61,41 @@ class Server(connectionClass.Connection):
 						"\n\thost = '%s'"
 						"\n\tport = '%s'" % (host, port))
 
+
+		#Cycle through connections to service connections with data
+		socketToConnection = {self.sock : self}
+		connections = [sock]
+
 		while self.running and self.sock:
-			client, address = self.sock.accept()
+			socketsToService, x, y = select.select(connections, [], [])
 
-			self.log(	"server%03d" % self.id,
-						"Creating server thread"
-						"\n\thost = '%s'"
-						"\n\tport = '%s''" % (host, port))
+			for socket in socketsToService:
+				# Server has new connection
+				if type(socket) == type(self):
+					client, address = self.sock.accept()
 
-			self.createThread(client, self.threadCount, self)
-			self.threadCount += 1
+					self.log(	"server%03d" % self.id,
+								"Creating server child"
+								"\n\thost = '%s'"
+								"\n\tport = '%s''" % (host, port))
+
+					self.createChild(client, self.childCount, self)
+					self.childCount += 1
+
+				# Child connection
+				else:
+					socketToConnection[socket].recv()
+
 
 		self.sock.close()
 		self.sock = None
 
 		return True
 
-	def createThread(self, client, id, server):
+	def createChild(self, client, id, server):
 		"""
-		createThread(	client, # The client socket
-						id, # A number that is unique to this thread; used for logging
+		createChild(	client, # The client socket
+						id, # A number that is unique to this child; used for logging
 						server) # Reference to server process; used for logging
 		"""
 		pass
@@ -88,18 +103,18 @@ class Server(connectionClass.Connection):
 	def stopListen(self):
 		self.running = False
 
-class ServerThread(threading.Thread):
+class ServerChild(connectionClass.Connection):
 	"""
-	ServerThread(	client, # The client socket
+	ServerChild(	client, # The client socket
 					id, # A number that is unique to this thread; used for logging
-					server) # Reference to server process; used for logging
+					serverId) # Reference to server process; used for logging
 	"""
-	def __init__(self, client, id, server):
+	def __init__(self, client, id, serverId, **kargs):
+		super(ServerChild, self).__init__(**kargs)
+
 		self.client = client
 		self.id = id
-		self.server = server
-
-		threading.Thread.__init__(self)
+		self.serverId = serverId
 
 	def run(self):
 		pass

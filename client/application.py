@@ -10,7 +10,7 @@ import fileClientClass #FileClient class
 
 import subprocess #Running external processes
 
-_DEFAULT_JOB_DIRECTORY = "%s/client/test/" % _ROOT_DIRECTORY
+_DEFAULT_JOB_DIRECTORY = "%sclient/test/" % _ROOT_DIRECTORY
 
 class ClientApplication:
 
@@ -31,7 +31,6 @@ class ClientApplication:
 		process = subprocess.Popen(	'tar xvf %sjob.tar.gz -C %s' % (self.jobDirectory, self.jobDirectory),
 									shell=True,
 									stdout=subprocess.PIPE)
-		print process.stdout.readlines()
 
 		process = subprocess.Popen(	'%sdoJob < %sjobInput' % (self.jobDirectory, self.jobDirectory),
 									shell=True,
