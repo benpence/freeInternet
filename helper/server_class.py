@@ -85,6 +85,12 @@ class Server(connection_class.Connection):
 
                 # Runs next step in socket; if done, discards it
                 elif not socketToConnection[s].next():
+                    if s in waitForRecv:
+                        waitForRecv.remove(s)
+
+                    if s in waitForSend:
+                        waitForSend.remove(s)
+
                     socketToConnection.pop(s)
                     s.close()
 
