@@ -1,125 +1,101 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
-import clientClass
-import os
+import client_class #parent
+import os #directory paths
 
 from constants import _ROOT_DIRECTORY
 
 _DEFAULT_PATH = ""
 _JOIN_CHARACTER = "|"
 
-class FileClient(clientClass.Client):
-	"""
-	FileClient(	filepath=, # location to put/look for files,
-				kwargs...)
+class ClientFile(client_class.Client):
+    def __init__(self, filepath=_DEFAULT_PATH, **kwargs):
+        super(ClientFile, self).__init__(**kwargs)
 
-		Enqueue files to be send/received with enqueueTransfer()
-		Start transfer by calling connect()
+        self.filepath = os.path.join(_ROOT_DIRECTORY, filepath)
 
-		transfer protocol client->server header is "A|B|C|..." where
-			A = "up" (client->server) or "down" (server->client)
-			B = size of file to be transfered in bytes
-				If B left blank, server sends "B|..." for filesize
-			C = name of file to be transfered
-			| = field delimiter 
+    def setFile(self, direction, filename):
+        self.direction = direction
+        self.filename = filename
 
-			when done, send "done|||..."
-	"""
+    def connectActions(self):
+        # Client->Server
+        self.filepath = os.path.join(self.filepath, self.filename)
 
-	def __init__(self, filepath=_DEFAULT_PATH, **kwargs):
-		super(FileClient, self).__init__(**kwargs)
+        # Nonexistent file?
+        if not os.path.exists(self.filepath):
+            self.log("client%03d" % self.id,
+                     "file to send not found"
+                     "\n\tdirection = '%s'"
+                     "\n\tsource = '%s'" % (self.direction, self.filepath),
+                     messageType="ERR")
+            return False
 
-		self.filepath = "%s%s" % (_ROOT_DIRECTORY, filepath)
-		self.fileQueue = []
+        filesize = bytesLeft = os.path.getsize(self.filepath)
 
-	def connectActions(self):
-		for transfer in self.fileQueue:
-			direction, filename = transfer
+        # Send header
+        header = _JOIN_CHARACTER.join([self.direction,
+                                       str(os.path.getsize(self.filepath)),
+                                       self.filename,
+                                       ""])
+        self.sock.send(self.pad(header))
 
-			# Client->Server
-			if direction == "up":
-				source = os.path.join(self.filepath, filename)
+        # Transfer pieces to server
+        file = open(self.filepath, 'rb')
+        while bytesLeft > 0:
+            if bytesLeft < self.chunkSize:
+                self.sock.send(file.read(bytesLeft))
+            else:
+                self.sock.send(file.read(self.chunkSize))
+            bytesLeft -= self.chunkSize
 
-				# Nonexistent file?
-				if not os.path.exists(source):
-					self.log(	"client%03d" % self.id,
-								"file to send not found"
-								"\n\tdirection = '%s'"
-								"\n\tsource = '%s'" % (direction, source),
-								messageType="ERR")
-					return False
+        '''self.log("client%03d" % self.id,
+                 "sent %d bytes of '%s' to server" % (filesize, self.filepath))
 
-				filesize = bytesLeft = os.path.getsize(source)
+        # Server->Client
+        elif direction == "down":
+            destination = os.path.join(self.filepath, filename)
 
-				# Send header
-				header = _JOIN_CHARACTER.join([	direction,
-												str(os.path.getsize(source)),
-												filename,
-												""])
-				self.sock.send(self.pad(header))
+            # Send header
+            header = _JOIN_CHARACTER.join([    direction,
+                                            "",
+                                            filename,
+                                            ""])
+            self.sock.send(self.pad(header))
 
-				# Transfer pieces to server
-				with open(source, 'rb') as file:
-					while bytesLeft > 0:
-						if bytesLeft < self.chunkSize:
-							self.sock.send(file.read(bytesLeft))
-						else:
-							self.sock.send(file.read(self.chunkSize))
-						bytesLeft -= self.chunkSize
+            # Receive filesize
+            data = self.sock.recv(self.chunkSize)
+            filesize = bytesLeft = int(data.split(_JOIN_CHARACTER)[0])
 
-				self.log(	"client%03d" % self.id,
-							"sent %d bytes of '%s' to server" % (filesize, source))
+            # Receive file chunks
+            with open(destination, 'wb') as file:
+                while bytesLeft > 0:
+                    if bytesLeft < self.chunkSize:
+                        file.write(self.sock.recv(bytesLeft))
+                    else:
+                        file.write(self.sock.recv(self.chunkSize))
+                    bytesLeft -= self.chunkSize
 
-			# Server->Client
-			elif direction == "down":
-				destination = os.path.join(self.filepath, filename)
+            self.log(    "client%03d" % self.id,
+                        "received %d into file '%s'" % (filesize, destination))
+        else:
+            self.log(    "client%03d" % self.id,
+                        "bad protocol"
+                        "\n\tdirection = '%s'"
+                        "\n\tfilename = '%s'" % (direction, filename),
+                        messageType = "ERR")
 
-				# Send header
-				header = _JOIN_CHARACTER.join([	direction,
-												"",
-												filename,
-												""])
-				self.sock.send(self.pad(header))
+            return False
 
-				# Receive filesize
-				data = self.sock.recv(self.chunkSize)
-				filesize = bytesLeft = int(data.split(_JOIN_CHARACTER)[0])
+        header = _JOIN_CHARACTER.join(["done", "", "", ""])
+        self.sock.send(self.pad(header))
 
-				# Receive file chunks
-				with open(destination, 'wb') as file:
-					while bytesLeft > 0:
-						if bytesLeft < self.chunkSize:
-							file.write(self.sock.recv(bytesLeft))
-						else:
-							file.write(self.sock.recv(self.chunkSize))
-						bytesLeft -= self.chunkSize
+        self.fileQueue = []
 
-				self.log(	"client%03d" % self.id,
-							"received %d into file '%s'" % (filesize, destination))
-			else:
-				self.log(	"client%03d" % self.id,
-							"bad protocol"
-							"\n\tdirection = '%s'"
-							"\n\tfilename = '%s'" % (direction, filename),
-							messageType = "ERR")
-
-				return False
-
-		header = _JOIN_CHARACTER.join(["done", "", "", ""])
-		self.sock.send(self.pad(header))
-
-		self.fileQueue = []
-
-		return True
-
-	def enqueueTransfer(self, direction, filename):
-		"""
-			enqueueTransfer(direction, # "up" means ->Server, "down" means ->Client
-							filename)
-		"""
-		self.fileQueue.append((direction, filename))
+        return True
+            '''
 
 if __name__ == "__main__":
-	client = FileClient(output=True, filepath="./clientFiles/")
-	client.enqueueTransfer("down", "test")
-	client.connect()
+    client = ClientFile(output=True, filepath="helper/clientFiles")
+    client.setFile("up", "test")
+    client.connect()

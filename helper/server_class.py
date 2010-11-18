@@ -85,6 +85,7 @@ class Server(connection_class.Connection):
 
                 # Runs next step in socket; if done, discards it
                 elif not socketToConnection[s].next():
+                    print "GOT THERE"
                     if s in waitForRecv:
                         waitForRecv.remove(s)
 
@@ -107,6 +108,10 @@ class Server(connection_class.Connection):
                 waitForSend # append to this list for server->client)
         """
         pass
+
+class ServerJob(connection_class.Connection):
+    def __init__(self, **kwargs):
+        super(ServerJob, self).__init__(**kwargs)
 
 if __name__ == "__main__":
     server = Server()

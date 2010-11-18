@@ -1,12 +1,18 @@
+#!/usr/bin/python2.7
+
+import client_class
 import socket
 
-# Connect to server
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', 5555))
+class ClientEcho(client_class.Client):
+    def __init__(self, **kwargs):
+        super(ClientEcho, self).__init__(**kwargs)
 
-l = ["hey", "ho", "hiya"]
+    def connectActions(self):
+        l = ["hey", "ho", "hiya"]
 
-for i in l:
-    sock.send(i)
+        for i in l:
+            self.sock.send(i)
 
-#sock.close()
+if __name__ == "__main__":
+    cli = ClientEcho()
+    cli.connect()

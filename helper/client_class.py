@@ -1,17 +1,16 @@
 #!/usr/bin/python
 
-import connectionClass
+import connection_class
 import socket
 
 _DEFAULT_HOST = 'localhost'
 _DEFAULT_PORT = 5555
 
-class Client(connectionClass.Connection):
+class Client(connection_class.Connection):
 	"""
 	Client(	chunkSize=, # size of data that connection will receive
 			output=) # boolean, logging printed to shell?
 	"""
-
 
 	def __init__(self, **kwargs):
 		super(Client, self).__init__(**kwargs)
