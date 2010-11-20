@@ -3,62 +3,61 @@
 import connection_class
 import socket
 
-_DEFAULT_HOST = 'localhost'
-_DEFAULT_PORT = 5555
+from constants import _DEFAULT_HOST, _DEFAULT_PORT
 
 class Client(connection_class.Connection):
-	"""
-	Client(	chunkSize=, # size of data that connection will receive
-			output=) # boolean, logging printed to shell?
-	"""
+    """
+    Client(chunkSize= # size of data that connection will receive,
+           output= # boolean, logging printed to shell?)
+    """
 
-	def __init__(self, **kwargs):
-		super(Client, self).__init__(**kwargs)
+    def __init__(self, **kwargs):
+        super(Client, self).__init__(**kwargs)
 
-	def connect(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
-		"""
-		Set up connection to server
-			False 	-> Connection failed
-			True 	-> Connection succeeded
-		"""
+    def connect(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+        """
+        Set up connection to server
+            False     -> Connection failed
+            True     -> Connection succeeded
+        """
 
-		# Already connected?
-		if self.sock:
-			self.sock.close()
-			self.sock = None
+        # Already connected?
+        if self.sock:
+            self.sock.close()
+            self.sock = None
 
-		# Connect to server
-		try:
-			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			self.sock.connect((host, port))
+        # Connect to server
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((host, port))
 
-		except socket.error, (value, message): #Failed
-			if self.sock:
-				self.sock.close()
+        except socket.error, (value, message): #Failed
+            if self.sock:
+                self.sock.close()
 
-			self.log(	"client%03d" % self.id,
-						"failed to connect"
-						"\n\tmessage = '%s'"
-						"\n\thost = '%s'"
-						"\n\tport = '%s'" % (message, host, port),
-						messageType="ERR")
-			return False
+            self.log(str(self),
+                     "failed to connect"
+                     "\n\tmessage = '%s'"
+                     "\n\thost = '%s'"
+                     "\n\tport = '%s'" % (message, host, port),
+                     messageType="ERR")
+            return False
 
-		self.log(	"client%03d" % self.id,
-					"socket connected"
-					"\n\thost = '%s'"
-					"\n\tport = '%s'" % (host, port))
+        self.log(str(self),
+                 "socket connected"
+                 "\n\thost = '%s'"
+                 "\n\tport = '%s'" % (host, port))
 
-		self.connectActions()
+        self.connectActions(self.sock)
 
-		self.sock.close()
-		self.sock = None
+        self.sock.close()
+        self.sock = None
 
-		return True
+        return True
 
-	def connectActions(self):
-		pass
+    def connectActions(self):
+        pass
 
 if __name__ == "__main__":
-	cli = Client()
-	cli.connect()
+    cli = Client()
+    cli.connect()

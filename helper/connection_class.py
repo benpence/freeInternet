@@ -3,7 +3,7 @@
 import sys
 import logging #Logger class
 
-_CHUNK_SIZE = 4096
+from constants import _CHUNK_SIZE
 
 class Connection(object):
     """

@@ -3,10 +3,11 @@
 import connection_class
 import socket
 import select
+import os
+
+import constants
 
 _BACKLOG = 5 # max number of connections; 5 is standard
-_DEFAULT_HOST = ''
-_DEFAULT_PORT = 5555
 
 class Server(connection_class.Connection):
     """
@@ -17,19 +18,22 @@ class Server(connection_class.Connection):
         passes successful connections to ServerThread threads
     """
 
-
-    def __init__(self, **kwargs):
+    def __init__(self, directory=constants._DEFAULT_PATH, **kwargs):
         super(Server, self).__init__(**kwargs)
 
+        self.directory = os.path.join(constants._ROOT_DIRECTORY, directory)
         self.childCount = 0
 
-    def listen(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+    def __str__(self):
+        return "server%03d" % self.id
+
+    def listen(self, host=constants._DEFAULT_HOST, port=constants._DEFAULT_PORT):
         """
         listen(host= # IP or domain name to listen on,
                port= # port to listen on)
 
             start listening for connections
-            pass off connection to createThread()
+            pass off connection to jobs()
         """
 
         # Already listening
@@ -46,7 +50,7 @@ class Server(connection_class.Connection):
         except socket.error, (value, message): #Failed
             if self.sock:
                 self.sock.close()
-            self.log("server%03d" % self.id,
+            self.log(str(self),
                      "socket failed to listen"
                      "\n\tmessage = '%s'"
                      "\n\thost = '%s'"
@@ -55,7 +59,7 @@ class Server(connection_class.Connection):
 
             return False
 
-        self.log("server%03d" % self.id,
+        self.log(str(self),
                  "socket created"
                  "\n\thost = '%s'"
                  "\n\tport = '%s'" % (host, port))
@@ -71,21 +75,56 @@ class Server(connection_class.Connection):
             readyForRecv, readyForSend, y = select.select(waitForRecv, waitForSend, [])
 
             for s in readyForRecv + readyForSend:
+                print "GOING THROUGH LOOOOOOOOP"
                 # Server has new connection
                 if s is self.sock:
                     client, address = self.sock.accept()
 
-                    self.log("server%03d" % self.id,
-                             "Creating server child"
+                    self.log(str(self),
+                             "Received new connection"
                              "\n\thost = '%s'"
-                             "\n\tport = '%s''" % (host, port))
+                             "\n\tport = '%s'" % (host, port))
 
-                    # Hook for child classes
-                    socketToConnection[client] = self.makeJob(client, address, waitForRecv, waitForSend)
+                    # Determine protocol
+                    print "GETTING PROTOCOL FROM PACKET"
+                    protocol, direction = constants.Protocol.unpad(client.recv(self.chunkSize))
+                    print "GOT PROTOCOL FROM PACKET"
+
+                    self.log(str(self),
+                             "\tprotocol = '%s'"
+                             "\n\tdirection = '%s'" % (protocol, direction),
+                             continuation=True)
+
+                    print "CHECKING PROTOCOL"
+                    if protocol in constants.Protocol._PROTOCOLS:
+                        protocol = constants.Protocol._PROTOCOLS[protocol]
+
+                        print "PICKING QUEUE"
+                        queue = None
+
+                        if protocol._WAIT_FOR is constants._WAIT_FOR_SEND:
+                            queue = waitForRecv
+                        else:
+                            queue = waitForSend
+
+                        print "BEFORE ACTIONS"
+                        actions = socketToConnection[client] = protocol.actions(self, client, direction, self.directory)
+                        print "PAST ACTIONS"
+
+                        waitForSend.append(client)
+                        #queue.append(client)
+                        self.log(str(self),
+                                 "\tqueue = %s" % protocol._WAIT_FOR,
+                                 continuation=True)
+
+                    # Bad protocol
+                    else:
+                        self.log(str(self),
+                                 "BAD PROTOCOL",
+                                 messageType="ERR")
 
                 # Runs next step in socket; if done, discards it
                 elif not socketToConnection[s].next():
-                    print "GOT THERE"
                     if s in waitForRecv:
                         waitForRecv.remove(s)
 
@@ -100,19 +139,6 @@ class Server(connection_class.Connection):
 
         return True
 
-    def makeJob(self, client, address, waitForRecv, waitForSend):
-        """
-        makeJob(client # the client socket,
-                address # the address of the cilent,
-                waitForRecv # append to this list for client->server
-                waitForSend # append to this list for server->client)
-        """
-        pass
-
-class ServerJob(connection_class.Connection):
-    def __init__(self, **kwargs):
-        super(ServerJob, self).__init__(**kwargs)
-
 if __name__ == "__main__":
-    server = Server()
+    server = Server(directory="helper/serverFiles")
     server.listen()
