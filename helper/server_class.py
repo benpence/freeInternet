@@ -5,29 +5,29 @@ import socket
 import select
 import os
 
-import constants
+import protocols
 
 _BACKLOG = 5 # max number of connections; 5 is standard
 
 class Server(connection_class.Connection):
     """
-    Server(chunkSize= # size of data that connection will receive,
-           output= # boolean, logging printed to shell?)
+    Server(directory= # directory after _ROOT_DIRECTORY to find and put files,
+           output= # boolean logging printed to shell?)
 
         listens on specified interface (IP), port for connections
         passes successful connections to ServerThread threads
     """
 
-    def __init__(self, directory=constants._DEFAULT_PATH, **kwargs):
+    def __init__(self, directory=protocols._DEFAULT_PATH, **kwargs):
         super(Server, self).__init__(**kwargs)
 
-        self.directory = os.path.join(constants._ROOT_DIRECTORY, directory)
+        self.directory = os.path.join(protocols._ROOT_DIRECTORY, directory)
         self.childCount = 0
 
     def __str__(self):
         return "server%03d" % self.id
 
-    def listen(self, host=constants._DEFAULT_HOST, port=constants._DEFAULT_PORT):
+    def listen(self, host=protocols._DEFAULT_HOST, port=protocols._DEFAULT_PORT):
         """
         listen(host= # IP or domain name to listen on,
                port= # port to listen on)
@@ -75,7 +75,6 @@ class Server(connection_class.Connection):
             readyForRecv, readyForSend, y = select.select(waitForRecv, waitForSend, [])
 
             for s in readyForRecv + readyForSend:
-                print "GOING THROUGH LOOOOOOOOP"
                 # Server has new connection
                 if s is self.sock:
                     client, address = self.sock.accept()
@@ -86,36 +85,18 @@ class Server(connection_class.Connection):
                              "\n\tport = '%s'" % (host, port))
 
                     # Determine protocol
-                    print "GETTING PROTOCOL FROM PACKET"
-                    protocol, direction = constants.Protocol.unpad(client.recv(self.chunkSize))
-                    print "GOT PROTOCOL FROM PACKET"
+                    protocol, direction = protocols.Protocol.unpad(client.recv(protocols._CHUNK_SIZE))
 
                     self.log(str(self),
                              "\tprotocol = '%s'"
                              "\n\tdirection = '%s'" % (protocol, direction),
                              continuation=True)
 
-                    print "CHECKING PROTOCOL"
-                    if protocol in constants.Protocol._PROTOCOLS:
-                        protocol = constants.Protocol._PROTOCOLS[protocol]
+                    if protocol in protocols.Protocol._PROTOCOLS:
+                        protocol = protocols.Protocol._PROTOCOLS[protocol]
 
-                        print "PICKING QUEUE"
-                        queue = None
-
-                        if protocol._WAIT_FOR is constants._WAIT_FOR_SEND:
-                            queue = waitForRecv
-                        else:
-                            queue = waitForSend
-
-                        print "BEFORE ACTIONS"
                         actions = socketToConnection[client] = protocol.actions(self, client, direction, self.directory)
-                        print "PAST ACTIONS"
-
                         waitForSend.append(client)
-                        #queue.append(client)
-                        self.log(str(self),
-                                 "\tqueue = %s" % protocol._WAIT_FOR,
-                                 continuation=True)
 
                     # Bad protocol
                     else:
@@ -124,15 +105,26 @@ class Server(connection_class.Connection):
                                  messageType="ERR")
 
                 # Runs next step in socket; if done, discards it
-                elif not socketToConnection[s].next():
+                else:
+                    nextAction = socketToConnection[s].next()
+    
+                    # Remove from all lists
                     if s in waitForRecv:
                         waitForRecv.remove(s)
 
                     if s in waitForSend:
                         waitForSend.remove(s)
+                    
+                    # Add to next correct list
+                    if nextAction == "send":
+                        waitForSend.append(s)
 
-                    socketToConnection.pop(s)
-                    s.close()
+                    elif nextAction == "recv":
+                        waitForSend.append(s)
+                        
+                    else:
+                        socketToConnection.pop(s)
+                        s.close()
 
         self.sock.close()
         self.sock = None

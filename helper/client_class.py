@@ -3,18 +3,20 @@
 import connection_class
 import socket
 
-from constants import _DEFAULT_HOST, _DEFAULT_PORT
+import protocols
 
 class Client(connection_class.Connection):
     """
-    Client(chunkSize= # size of data that connection will receive,
-           output= # boolean, logging printed to shell?)
+    Client(output= # logging printed to shell?)
     """
 
     def __init__(self, **kwargs):
         super(Client, self).__init__(**kwargs)
 
-    def connect(self, host=_DEFAULT_HOST, port=_DEFAULT_PORT):
+    def __str__(self):
+        return "client%03d" % self.id
+
+    def connect(self, host=protocols._DEFAULT_HOST, port=protocols._DEFAULT_PORT):
         """
         Set up connection to server
             False     -> Connection failed
@@ -48,6 +50,7 @@ class Client(connection_class.Connection):
                  "\n\thost = '%s'"
                  "\n\tport = '%s'" % (host, port))
 
+        # Hook for child classes
         self.connectActions(self.sock)
 
         self.sock.close()

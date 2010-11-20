@@ -3,18 +3,15 @@
 import sys
 import logging #Logger class
 
-from constants import _CHUNK_SIZE
-
 class Connection(object):
     """
-    Connection(chunkSize = #, output = boolean)
+    Connection(output= # print logs to stdout?)
     """
 
     __instances = {}
     count = 0
 
-    def __init__(self, chunkSize=_CHUNK_SIZE, output=True):
-        self.chunkSize = chunkSize
+    def __init__(self, output=True):
         self.output = output
 
         self.running = True # for threading
@@ -30,12 +27,6 @@ class Connection(object):
             kargs['visualCue'] = self.output
 
         logging.Logger.log(*args, **kargs)
-
-    def pad(self, string):
-        while len(string) < self.chunkSize:
-            string += "."
-        return string
-
 
 if __name__ == "__main__":
     hey = Connection()
