@@ -1,176 +1,29 @@
 import os
+import socket
 import logging
 
 _ROOT_DIRECTORY = "/home/bmp/Source/Free-Internet/"
-_DEFAULT_PATH = ""
+_DEFAULT_PATH = "helper/serverFiles/"
 
 _DEFAULT_HOST = 'localhost'
 _DEFAULT_PORT = 5555
 _CHUNK_SIZE = 4096
 
 _JOIN_CHARACTER = "|"
+_PAD_CHARACTER = "."
+
 _WAIT_FOR_SEND = "send"
 _WAIT_FOR_RECV = "recv"
 
-class ProtocolEcho(object):
-    _FROM_CLIENT = "fromClient"
-    _FROM_SERVER = "fromServer"
-
-    _WAIT_FOR = _WAIT_FOR_SEND
-
-    @classmethod
-    def actions(cls, type, sock, direction, directory):
-        if direction == ProtocolEcho._FROM_CLIENT:
-            if str(type).startswith("server"):
-                return ProtocolEcho.recv(sock)
-            else:
-                return ProtocolEcho.send(sock)
-                
-        elif direction == ProtocolEcho._FROM_SERVER:
-            if str(type).startswith("server"):
-                return ProtocolEcho.send(sock)
-            else:
-                return ProtocolEcho.recv(sock)
-
-        else:
-            logging.Logger.log(str(type),
-                               "BAD DIRECTION",
-                               messageType = "ERR")
-            return Protocol.dummyActions()
-
-    @classmethod
-    def send(cls, sock):
-        yield "send"
-        sock.send(Protocol.pad("GOOD MORNING"))
-
-        yield "recv"
-        data = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield "send"
-        sock.send(Protocol.pad("HOW ARE YOU?"))
-
-        yield "recv"
-        data = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield "send"
-        sock.send(Protocol.pad("TA"))
-
-        yield "recv"
-        data = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield None
-
-    @classmethod
-    def recv(cls, sock):
-
-        yield "recv"
-        data = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield "send"
-        sock.send(Protocol.pad("GOOD MORNING"))
-
-        yield "recv"
-        data = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield "send"
-        sock.send(Protocol.pad("GOOD, GOOD."))
-
-        yield "recv"
-        data = Protocol.pad(sock.recv(_CHUNK_SIZE))
-        print data
-
-        yield "send"
-        sock.send(Protocol.pad("TA"))
-
-        yield None
-
-class ProtocolFile(object):
-    _JOB_NEW = "new"
-    _JOB_OLD = "old"
-
-    _WAIT_FOR = _WAIT_FOR_SEND
-
-    @classmethod
-    def actions(cls, type, sock, direction, directory, jobID=None):
-        if direction == ProtocolFile._JOB_NEW:
-            if str(type).startswith("server"):
-                return ProtocolFile.send(sock, directory, ProtocolFile.getJobID())
-            else:
-                return ProtocolFile.recv(sock, directory)
-                
-        elif direction == ProtocolFile._JOB_OLD:
-            if str(type).startswith("server"):
-                return ProtocolFile.recv(sock, directory)
-            else:
-                return ProtocolFile.send(sock, directory, jobID)
-
-        else:
-            logging.Logger.log(str(type),
-                               "BAD DIRECTION",
-                               messageType = "ERR")
-            return Protocol.dummyActions()
-
-    @classmethod
-    def getJobID(cls):
-        return str(123)
-
-    @classmethod
-    def send(cls, sock, directory, jobID):
-        yield "send"
-        sock.send(Protocol.pad(jobID))
-
-        yield "send"
-        filepath = os.path.join(directory, jobID)
-        filesize = bytesLeft = os.path.getsize(filepath)
-
-        sock.send(Protocol.pad(str(filesize)))
-
-        file = open(filepath, 'rb')
-
-        while bytesLeft > 0:
-            yield "send"
-            if bytesLeft < _CHUNK_SIZE:
-                sock.send(file.read(bytesLeft))
-            else:
-                sock.send(file.read(_CHUNK_SIZE))
-            bytesLeft -= _CHUNK_SIZE
-
-        file.close()
-
-        yield None
-
-    @classmethod
-    def recv(cls, sock, directory):
-        yield "recv"
-        jobID = Protocol.unpad(sock.recv(_CHUNK_SIZE))
-
-
-        yield "recv"
-        filesize = bytesLeft = int(Protocol.unpad(sock.recv(_CHUNK_SIZE)))
-
-        filepath = os.path.join(directory, jobID)
-        file = open(filepath, 'wb')
-
-        while bytesLeft > 0:
-            yield "recv"
-            if bytesLeft < _CHUNK_SIZE:
-                file.write(sock.recv(bytesLeft))
-            else:
-                file.write(sock.recv(_CHUNK_SIZE))
-            bytesLeft -= _CHUNK_SIZE
-
-        file.close()
-
-        yield None
-
 class Protocol(object):
-    _PROTOCOLS = {"file" : ProtocolFile,
-                  "echo" : ProtocolEcho}
+    def __init__(self, caller, sock, direction, address):
+        self.caller = caller
+        self.sock = sock
+        self.direction = direction
+        self.address = address
+
+    def __str__(self):
+        return self.address
 
     @classmethod
     def pad(cls, l):
@@ -180,7 +33,7 @@ class Protocol(object):
             string = l + _JOIN_CHARACTER
 
         while len(string) < _CHUNK_SIZE:
-            string += "."
+            string += _PAD_CHARACTER
         return string
 
     @classmethod
@@ -192,7 +45,238 @@ class Protocol(object):
         else:
             return l
 
-    @classmethod
-    def dummyActions(cls):
-        yield False
+    def writeFile(self, file, data):
+        try:
+            file.write(data)
+        except IOError, e:
+            logging.Logger.log(str(self.caller),
+                               "[%s] "
+                               "Error writing to file %s" % (str(self), file.name),
+                               messageType="ERR")
 
+    def readFile(self, file, amount=_CHUNK_SIZE):
+        try:
+            data = file.read(amount)
+        except IOError, e:
+            logging.Logger.log(str(self.caller),
+                               "[%s] "
+                               "Error reading from file %s" % (str(self), file.name),
+                               messageType="ERR")
+            return None
+        return data
+
+
+    def sendData(self, data, binary=None):
+        try:
+            if binary:
+                self.sock.send(data)
+            else:
+                self.sock.send(Protocol.pad(data))
+        except socket.error, e:
+            logging.Logger.log(str(self.caller),
+                               "[%s] "
+                               "Error sending" % str(self),
+                               messageType = "ERR")
+            return None
+        return True
+
+    def recvData(self, binary=None):
+        try:
+            if binary:
+                data = self.sock.recv(binary)
+            else:
+                data = Protocol.unpad(self.sock.recv(_CHUNK_SIZE))
+        except socket.error, e:
+            logging.Logger.log(str(self.caller),
+                               "[%s] "
+                               "Error receiving" % str(self),
+                               messageType = "ERR")
+            return None
+        return data
+
+    def actions(self):
+        pass
+                    
+    def dummyActions(self):
+        yield None
+
+class ProtocolEcho(Protocol):
+    _FROM_CLIENT = "fromClient"
+    _FROM_SERVER = "fromServer"
+
+    def __init__(self, caller, sock, direction, address):
+        super(ProtocolEcho, self).__init__(caller, sock, direction, address)
+
+    def actions(self):
+        # Client -> Server
+        if self.direction == self._FROM_CLIENT:
+            # Server
+            if str(self.caller).startswith("server"):
+                return self.recv()
+
+            # Client
+            else:
+                return self.send()
+                
+        # Server -> Client
+        elif self.direction == self._FROM_SERVER:
+            # Server
+            if str(self.caller).startswith("server"):
+                return self.send()
+
+            # Client
+            else:
+                return self.recv()
+
+        else:
+            logging.Logger.log(str(caller),
+                               "[%s] "
+                               "BAD DIRECTION" % str(self),
+                               messageType = "ERR")
+            return self.dummyActions()
+
+    def send(self):
+        yield _WAIT_FOR_SEND
+        self.sendData("GOOD MORNING")
+
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield _WAIT_FOR_SEND
+        self.sendData("HOW ARE YOU?")
+
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield _WAIT_FOR_SEND
+        self.sendData("TA")
+
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield None
+
+    def recv(self):
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield _WAIT_FOR_SEND
+        self.sendData("GOOD MORNING")
+
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield _WAIT_FOR_SEND
+        self.sendData("GOOD, GOOD.")
+
+        yield _WAIT_FOR_RECV
+        data = self.recvData()
+        print data
+
+        yield _WAIT_FOR_SEND
+        self.sendData("TA")
+
+        yield None
+
+class ProtocolFile(Protocol):
+    _JOB_NEW = "new"
+    _JOB_OLD = "old"
+
+    def __init__(self, caller, sock, direction, address, directory=_DEFAULT_PATH, jobID=None):
+        super(ProtocolFile, self).__init__(caller, sock, direction, address)
+
+        self.directory = os.path.join(_ROOT_DIRECTORY, directory)
+
+        if jobID:
+            self.jobID = jobID
+
+    def actions(self):
+        # Server -> Client
+        if self.direction == self._JOB_NEW:
+            # Server
+            if str(self.caller).startswith("server"):
+                return self.send(ProtocolFile.getJobID())
+
+            # Client
+            else:
+                return self.recv()
+                
+        # Client -> Server
+        elif self.direction == self._JOB_OLD:
+            # Server
+            if str(self.caller).startswith("server"):
+                return self.recv()
+
+            # Client
+            else:
+                return self.send(self.jobID)
+
+        else:
+            logging.Logger.log(str(caller),
+                               "[%s] "
+                               "BAD DIRECTION" % str(self),
+                               messageType = "ERR")
+            return self.dummyActions()
+
+    @classmethod
+    def getJobID(cls):
+        return 123
+
+    def send(self, jobID):
+        # Send jobID
+        yield _WAIT_FOR_SEND
+        self.sendData(str(jobID))
+
+        # Send filesize
+        yield _WAIT_FOR_SEND
+        filepath = os.path.join(self.directory, str(jobID))
+        filesize = bytesLeft = os.path.getsize(filepath)
+        self.sendData(str(filesize))
+
+        # Send file binary data
+        file = open(filepath, 'rb')
+
+        while bytesLeft > 0:
+            yield _WAIT_FOR_SEND
+            if bytesLeft < _CHUNK_SIZE:
+                self.sendData(self.readFile(amount=bytesLeft), binary=True)
+            else:
+                self.sendData(self.readFile(file), binary=True)
+            bytesLeft -= _CHUNK_SIZE
+
+        file.close()
+
+        yield None
+
+    def recv(self):
+        # Receive jobID
+        yield _WAIT_FOR_RECV
+        jobID = self.recvData()
+
+        # Receive filesize
+        yield _WAIT_FOR_RECV
+        filesize = bytesLeft = int(self.recvData())
+
+        # Receive file binary data
+        filepath = os.path.join(self.directory, jobID)
+        file = open(filepath, 'wb')
+
+        while bytesLeft > 0:
+            yield _WAIT_FOR_RECV
+            if bytesLeft < _CHUNK_SIZE:
+                self.writeFile(file, self.recvData(binary=bytesLeft))
+            else:
+                self.writeFile(file, self.recvData(binary=_CHUNK_SIZE))
+            bytesLeft -= _CHUNK_SIZE
+
+        file.close()
+
+        yield None
+
+_PROTOCOLS = {"file" : ProtocolFile,
+              "echo" : ProtocolEcho}

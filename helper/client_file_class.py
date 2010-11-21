@@ -1,8 +1,8 @@
 #!/usr/bin/python2.7
 
-import client_class #parent
 import os #directory paths
 
+import client_class #parent
 import protocols
 
 class ClientFile(client_class.Client):
@@ -11,19 +11,12 @@ class ClientFile(client_class.Client):
 
         self.directory = os.path.join(protocols._ROOT_DIRECTORY, directory)
 
-    def setMode(self, mode, jobID=None):
-        self.mode = mode
-        self.jobID = jobID
+    def getJobID(self):
+        return "123"
 
-    def connectActions(self, sock):
-        sock.send(protocols.Protocol.pad(["file", self.mode]))
+    def connectActions(self, sock, direction, address):
+        return protocols.ProtocolFile(self, sock, direction, self.directory, address,  jobID=self.getJobID()).actions()
 
-        actions = protocols.ProtocolFile.actions(self, sock, self.mode, self.directory, jobID=self.jobID)
-
-        while actions.next():
-            pass
 
 if __name__ == "__main__":
-    client = ClientFile(directory="helper/clientFiles")
-    client.setMode(protocols.ProtocolFile._JOB_OLD, jobID="123")
-    client.connect()
+    client = client_class.Client().connect("file", protocols.ProtocolFile._JOB_NEW, directory="helper/clientFiles")

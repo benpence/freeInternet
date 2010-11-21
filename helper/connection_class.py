@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import sys
 import logging #Logger class
 
 class Connection(object):

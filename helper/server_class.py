@@ -4,6 +4,7 @@ import connection_class
 import socket
 import select
 import os
+import sys
 
 import protocols
 
@@ -46,12 +47,12 @@ class Server(connection_class.Connection):
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.bind((host, port))
             self.sock.listen(_BACKLOG)
-
-        except socket.error, (value, message): #Failed
+        # Failed
+        except socket.error, (value, message): 
             if self.sock:
                 self.sock.close()
             self.log(str(self),
-                     "socket failed to listen"
+                     "Failed to listen"
                      "\n\tmessage = '%s'"
                      "\n\thost = '%s'"
                      "\n\tport = '%s'" % (message, host, port),
@@ -60,14 +61,14 @@ class Server(connection_class.Connection):
             return False
 
         self.log(str(self),
-                 "socket created"
+                 "Listening"
                  "\n\thost = '%s'"
                  "\n\tport = '%s'" % (host, port))
 
 
         #Cycle through connections to service connections with data
-        socketToConnection = {self.sock : self}
-        waitForRecv = [self.sock]
+        socketToConnection = {self.sock : protocols.Protocol(self, self.sock, "", "127.0.0.1")}
+        waitForRecv = [self.sock, sys.stdin]
         waitForSend = []
 
         while self.running and self.sock:
@@ -80,29 +81,44 @@ class Server(connection_class.Connection):
                     client, address = self.sock.accept()
 
                     self.log(str(self),
+                             "[%s] " % address[0],
                              "Received new connection"
                              "\n\thost = '%s'"
                              "\n\tport = '%s'" % (host, port))
 
                     # Determine protocol
-                    protocol, direction = protocols.Protocol.unpad(client.recv(protocols._CHUNK_SIZE))
+                    try:
+                        protocol, direction = protocols.Protocol.unpad(client.recv(protocols._CHUNK_SIZE))
+                    except socket.error, e:
+                        logging.Logger.log(str(self),
+                                           "[%s] "
+                                           "Error receiving" % address[0],
+                                           messageType = "ERR")
+                        self.running = False
+                        break
 
                     self.log(str(self),
                              "\tprotocol = '%s'"
                              "\n\tdirection = '%s'" % (protocol, direction),
                              continuation=True)
 
-                    if protocol in protocols.Protocol._PROTOCOLS:
-                        protocol = protocols.Protocol._PROTOCOLS[protocol]
+                    if protocol in protocols._PROTOCOLS:
+                        protocol = protocols._PROTOCOLS[protocol]
 
-                        actions = socketToConnection[client] = protocol.actions(self, client, direction, self.directory)
+                        socketToConnection[client] = protocol(self, client, direction, address[0]).actions()
                         waitForSend.append(client)
 
                     # Bad protocol
                     else:
                         self.log(str(self),
-                                 "BAD PROTOCOL",
+                                 "[%s] "
+                                 "BAD PROTOCOL" % address[0],
                                  messageType="ERR")
+
+                # Quit on standard input
+                elif s is sys.stdin:
+                    self.running = False
+                    break
 
                 # Runs next step in socket; if done, discards it
                 else:
@@ -116,16 +132,21 @@ class Server(connection_class.Connection):
                         waitForSend.remove(s)
                     
                     # Add to next correct list
-                    if nextAction == "send":
+                    if nextAction == protocols._WAIT_FOR_SEND:
                         waitForSend.append(s)
 
-                    elif nextAction == "recv":
+                    elif nextAction == protocols._WAIT_FOR_RECV:
                         waitForSend.append(s)
                         
                     else:
+                        self.log(str(self),
+                                 "Closing connection")
+                                 
                         socketToConnection.pop(s)
                         s.close()
 
+        self.log(str(self),
+                 "Closing server")
         self.sock.close()
         self.sock = None
 

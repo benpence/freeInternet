@@ -16,29 +16,40 @@ class Client(connection_class.Connection):
     def __str__(self):
         return "client%03d" % self.id
 
-    def connect(self, host=protocols._DEFAULT_HOST, port=protocols._DEFAULT_PORT):
-        """
-        Set up connection to server
-            False     -> Connection failed
-            True     -> Connection succeeded
-        """
+    def connect(self, protocol, direction, host=protocols._DEFAULT_HOST, port=protocols._DEFAULT_PORT, **kwargs):
+        if protocol not in protocols._PROTOCOLS:
+            self.log(str(self),
+                     "INVALID PROTOCOL. QUITTING"
+                     "\n\thost = '%s'"
+                     "\n\tport = '%s'" % (host, port),
+                     messageType="ERR")
+            return False
+
 
         # Already connected?
         if self.sock:
             self.sock.close()
             self.sock = None
 
+        self.log(str(self),
+                 "Trying to connect..."
+                 "\n\thost = '%s'"
+                 "\n\tport = '%s'"
+                 "\n\tprotocol = '%s'"
+                 "\n\tdirection = '%s'" % (host, port, protocol, direction))
+
         # Connect to server
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((host, port))
 
-        except socket.error, (value, message): #Failed
+        #Failed
+        except socket.error, (value, message):
             if self.sock:
                 self.sock.close()
 
             self.log(str(self),
-                     "failed to connect"
+                     "Failed to connect"
                      "\n\tmessage = '%s'"
                      "\n\thost = '%s'"
                      "\n\tport = '%s'" % (message, host, port),
@@ -46,21 +57,36 @@ class Client(connection_class.Connection):
             return False
 
         self.log(str(self),
-                 "socket connected"
+                 "Client connected"
                  "\n\thost = '%s'"
                  "\n\tport = '%s'" % (host, port))
 
+        # Send protocol and direction
+        try:
+            self.sock.send(protocols.Protocol.pad([protocol, direction]))
+        except socket.error, e:
+            self.log(str(self),
+                     "Failed to send protocol & direction",
+                     messageType="ERR")
+            
+
         # Hook for child classes
-        self.connectActions(self.sock)
+        actions = protocols._PROTOCOLS[protocol](self, self.sock, direction, socket.gethostname(), **kwargs).actions()
+        self.log(str(self),
+                 "Running actions")
+        while actions.next():
+            pass
+
+        self.log(str(self),
+                 "Closing connection")
 
         self.sock.close()
         self.sock = None
 
         return True
 
-    def connectActions(self):
-        pass
-
 if __name__ == "__main__":
-    cli = Client()
-    cli.connect()
+    Client().connect("file", protocols.ProtocolFile._JOB_NEW, directory="helper/clientFiles")
+    Client().connect("file", protocols.ProtocolFile._JOB_OLD, directory="helper/clientFiles", jobID=123)
+    Client().connect("echo", protocols.ProtocolEcho._FROM_CLIENT)
+    Client().connect("echo", protocols.ProtocolEcho._FROM_SERVER)

@@ -15,7 +15,7 @@ class Logger:
     logFiles = {}
     visualCues = True
 
-    def log(program, message, messageType="LOG", visualCue=False, continuation=False):
+    def log(program, message, messageType="LOG", visualCue=True, continuation=False):
         """
         writes message to respective log file
         """
@@ -27,7 +27,7 @@ class Logger:
         ## Output to file ##
         #Open file if not already open
         if program not in Logger.logFiles:
-            Logger.logFiles[program] = open("log_" + program, 'w+')
+            Logger.logFiles[program] = open("log_" + program, 'a')
 
         Logger.logFiles[program].write(log + "\n")
 
