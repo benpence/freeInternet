@@ -1,0 +1,28 @@
+#####
+
+JOB SYSTEM
+
+#####
+
+Database: sqlite3
+    Jobs
+        ID
+        Credit
+
+        Binary
+        Input
+
+    Job Status
+        ID
+        Client
+        Accepted
+
+        Returned
+        Output
+
+        Verified
+
+    Credits
+        Client
+        Credit
+

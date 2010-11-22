@@ -3,7 +3,7 @@ import socket
 import logging
 
 _ROOT_DIRECTORY = "/home/ben/Source/Free-Internet/"
-_DEFAULT_PATH = "helper/serverFiles/"
+_DEFAULT_PATH = "classes/serverFiles/"
 
 _DEFAULT_HOST = 'localhost'
 _DEFAULT_PORT = 5555
