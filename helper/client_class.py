@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import connection_class
 import socket
 
@@ -86,7 +84,16 @@ class Client(connection_class.Connection):
         return True
 
 if __name__ == "__main__":
-    Client().connect("file", protocols.ProtocolFile._JOB_NEW, directory="helper/clientFiles")
-    Client().connect("file", protocols.ProtocolFile._JOB_OLD, directory="helper/clientFiles", jobID=123)
-    Client().connect("echo", protocols.ProtocolEcho._FROM_CLIENT)
-    Client().connect("echo", protocols.ProtocolEcho._FROM_SERVER)
+    cli = Client()
+
+    # Test file protocol
+    cli.connect("file", protocols.ProtocolFile._JOB_NEW, directory="helper/clientFiles")
+    cli.connect("file", protocols.ProtocolFile._JOB_OLD, directory="helper/clientFiles", jobID=123)
+
+    # Test echo protocol
+    cli.connect("echo", protocols.ProtocolEcho._FROM_CLIENT)
+    cli.connect("echo", protocols.ProtocolEcho._FROM_SERVER)
+
+    # Test message protocol
+    notes = ["testing", "testing", "1", "2", "3"]
+    cli.connect("message", protocols.ProtocolMessage._FROM_CLIENT, messages=notes)

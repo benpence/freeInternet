@@ -2,5 +2,5 @@
 
 rm ./log_*
 rm ./*.pyc
-rm ./serverFiles/*
-rm ./clientFiles/*
+rm -r serverFiles
+rm -r clientFiles
