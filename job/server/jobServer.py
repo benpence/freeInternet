@@ -15,17 +15,23 @@ import sys
 sys.path.insert(0, "../../classes")
 import server_class
 
-_JOB_DIRECTORY = os.path.join(os.getcwd(), "jobs")
-_OUTPUT_DIRECTORY = os.path.join(_JOB_DIRECTORY, "output")
-
 class ServerJob(server_class.Server):
 	"""
+        TESTTEST
+    """
 
-	"""
+    _JOB_DIRECTORY = os.path.join(os.getcwd(), "jobs")
 	
-	def __init__(self, jobDirectory=_DEFAULT_JOB_DIRECTORY):
-		self.server = fileServerClass.FileServer(filepath="workISP/test/", output=True)
-		self.server.listen()
+	def __init__(self):
+        super(Server, self).__init__(jobDirectory=_JOB_DIRECTORY)
+
+		self.listen()
+
+    def getJobID(self):
+        return 0011
+
+    def __str__(self):
+        return "workServer"
 
 	def log(self, *args, **kargs):
 		if 'output' not in kargs:

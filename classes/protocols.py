@@ -2,7 +2,7 @@ import os
 import socket
 import logging
 
-_ROOT_DIRECTORY = os.path.split(os.getcwd())[0]
+_ROOT_DIRECTORY = "%s%s" % os.getcwd().partition("FreeInternet")[:2]
 
 _DEFAULT_HOST = 'localhost'
 _DEFAULT_PORT = 5555
@@ -237,7 +237,7 @@ class ProtocolFile(Protocol):
         if self.direction == self._JOB_NEW:
             # Server
             if str(self.caller).startswith("server"):
-                return self.send(ProtocolFile.getJobID())
+                return self.send(self.getJobID())
 
             # Client
             else:
@@ -260,18 +260,17 @@ class ProtocolFile(Protocol):
                                messageType = "ERR")
             return self.dummyActions()
 
-    @classmethod
-    def getJobID(cls):
-        return 123
+    def getJobID(self):
+        return self.caller.getJobID()
 
     def send(self, jobID):
         # Send jobID
         yield _WAIT_FOR_SEND
-        self.sendData(str(jobID))
+        self.sendData("%06d" % jobID)
 
         # Send filesize
         yield _WAIT_FOR_SEND
-        filepath = os.path.join(self.directory, str(jobID) + "send.tgz")
+        filepath = os.path.join(self.directory, "%06d.send.tgz" % jobID)
         filesize = bytesLeft = os.path.getsize(filepath)
         self.sendData(str(filesize))
 
@@ -300,7 +299,7 @@ class ProtocolFile(Protocol):
         filesize = bytesLeft = int(self.recvData())
 
         # Receive file binary data
-        filepath = os.path.join(self.directory, jobID + "recv.tgz")
+        filepath = os.path.join(self.directory, jobID + ".recv.tgz")
         file = open(filepath, 'wb')
 
         while bytesLeft > 0:
