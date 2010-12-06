@@ -8,16 +8,17 @@ workISP
 """
 
 #Add helper libraries
+
+import os
+
 import sys
+sys.path.insert(0, "../../classes")
+import server_class
 
-sys.path.insert(0, "../helper")
-from constants import _ROOT_DIRECTORY #Root directory
-from logging import Logger	#Logger class
-import fileServerClass #FileServer class
+_JOB_DIRECTORY = os.path.join(os.getcwd(), "jobs")
+_OUTPUT_DIRECTORY = os.path.join(_JOB_DIRECTORY, "output")
 
-_DEFAULT_JOB_DIRECTORY = "%sworkISP/test/" % _ROOT_DIRECTORY
-
-class WorkServer:
+class ServerJob(server_class.Server):
 	"""
 
 	"""
@@ -33,6 +34,8 @@ class WorkServer:
 		logging.Logger.log(*args, **kargs)
 
 def Main():
+    server = Server(jobDirectory=_JOB_DIRECTORY)
+    server.listen()
 	server = WorkServer()
 
 if __name__ == "__main__":

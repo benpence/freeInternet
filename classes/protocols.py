@@ -2,8 +2,7 @@ import os
 import socket
 import logging
 
-_ROOT_DIRECTORY = "/home/ben/Source/Free-Internet/"
-_DEFAULT_PATH = "classes/serverFiles/"
+_ROOT_DIRECTORY = os.path.split(os.getcwd())[0]
 
 _DEFAULT_HOST = 'localhost'
 _DEFAULT_PORT = 5555
@@ -104,6 +103,8 @@ class ProtocolEcho(Protocol):
     _FROM_CLIENT = "fromClient"
     _FROM_SERVER = "fromServer"
 
+    _PARAMETERS = {}
+
     def __init__(self, caller, sock, direction, address):
         super(ProtocolEcho, self).__init__(caller, sock, direction, address)
 
@@ -183,106 +184,13 @@ class ProtocolEcho(Protocol):
 
         yield None
 
-class ProtocolFile(Protocol):
-    _JOB_NEW = "new"
-    _JOB_OLD = "old"
-
-    def __init__(self, caller, sock, direction, address, directory=_DEFAULT_PATH, jobID=None):
-        super(ProtocolFile, self).__init__(caller, sock, direction, address)
-
-        self.directory = os.path.join(_ROOT_DIRECTORY, directory)
-
-        if jobID:
-            self.jobID = jobID
-
-    def actions(self):
-        # Server -> Client
-        if self.direction == self._JOB_NEW:
-            # Server
-            if str(self.caller).startswith("server"):
-                return self.send(ProtocolFile.getJobID())
-
-            # Client
-            else:
-                return self.recv()
-                
-        # Client -> Server
-        elif self.direction == self._JOB_OLD:
-            # Server
-            if str(self.caller).startswith("server"):
-                return self.recv()
-
-            # Client
-            else:
-                return self.send(self.jobID)
-
-        else:
-            logging.Logger.log(str(self.caller),
-                               "[%s] "
-                               "BAD DIRECTION" % str(self),
-                               messageType = "ERR")
-            return self.dummyActions()
-
-    @classmethod
-    def getJobID(cls):
-        return 123
-
-    def send(self, jobID):
-        # Send jobID
-        yield _WAIT_FOR_SEND
-        self.sendData(str(jobID))
-
-        # Send filesize
-        yield _WAIT_FOR_SEND
-        filepath = os.path.join(self.directory, str(jobID))
-        filesize = bytesLeft = os.path.getsize(filepath)
-        self.sendData(str(filesize))
-
-        # Send file binary data
-        file = open(filepath, 'rb')
-
-        while bytesLeft > 0:
-            yield _WAIT_FOR_SEND
-            if bytesLeft < _CHUNK_SIZE:
-                self.sendData(self.readFile(amount=bytesLeft), binary=True)
-            else:
-                self.sendData(self.readFile(file), binary=True)
-            bytesLeft -= _CHUNK_SIZE
-
-        file.close()
-
-        yield None
-
-    def recv(self):
-        # Receive jobID
-        yield _WAIT_FOR_RECV
-        jobID = self.recvData()
-
-        # Receive filesize
-        yield _WAIT_FOR_RECV
-        filesize = bytesLeft = int(self.recvData())
-
-        # Receive file binary data
-        filepath = os.path.join(self.directory, jobID)
-        file = open(filepath, 'wb')
-
-        while bytesLeft > 0:
-            yield _WAIT_FOR_RECV
-            if bytesLeft < _CHUNK_SIZE:
-                self.writeFile(file, self.recvData(binary=bytesLeft))
-            else:
-                self.writeFile(file, self.recvData(binary=_CHUNK_SIZE))
-            bytesLeft -= _CHUNK_SIZE
-
-        file.close()
-
-        yield None
-
 class ProtocolMessage(ProtocolEcho):
     _FROM_CLIENT = "fromClient"
     _FROM_SERVER = "fromServer"
 
     _END_OF_STREAM = '\\'
+
+    _PARAMETERS = {}
 
     def __init__(self, caller, sock, direction, address, messages=[]):
         super(ProtocolMessage, self).__init__(caller, sock, direction, address)
@@ -314,10 +222,12 @@ class ProtocolFile(Protocol):
     _JOB_NEW = "new"
     _JOB_OLD = "old"
 
-    def __init__(self, caller, sock, direction, address, directory=_DEFAULT_PATH, jobID=None):
+    _PARAMETERS = {"jobDirectory" : os.path.join(_ROOT_DIRECTORY, "classes", "serverFiles")}
+
+    def __init__(self, caller, sock, direction, address, jobDirectory=_PARAMETERS["jobDirectory"], jobID=None):
         super(ProtocolFile, self).__init__(caller, sock, direction, address)
 
-        self.directory = os.path.join(_ROOT_DIRECTORY, directory)
+        self.directory = os.path.join(_ROOT_DIRECTORY, jobDirectory)
 
         if jobID:
             self.jobID = jobID
@@ -361,7 +271,7 @@ class ProtocolFile(Protocol):
 
         # Send filesize
         yield _WAIT_FOR_SEND
-        filepath = os.path.join(self.directory, str(jobID))
+        filepath = os.path.join(self.directory, str(jobID) + "send.tgz")
         filesize = bytesLeft = os.path.getsize(filepath)
         self.sendData(str(filesize))
 
@@ -390,7 +300,7 @@ class ProtocolFile(Protocol):
         filesize = bytesLeft = int(self.recvData())
 
         # Receive file binary data
-        filepath = os.path.join(self.directory, jobID)
+        filepath = os.path.join(self.directory, jobID + "recv.tgz")
         file = open(filepath, 'wb')
 
         while bytesLeft > 0:

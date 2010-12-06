@@ -12,17 +12,17 @@ _BACKLOG = 5 # max number of connections; 5 is standard
 
 class Server(connection_class.Connection):
     """
-    Server(directory= # directory after _ROOT_DIRECTORY to find and put files,
-           output= # boolean logging printed to shell?)
+    Server(output= # boolean logging printed to shell?)
 
         listens on specified interface (IP), port for connections
-        passes successful connections to ServerThread threads
     """
 
-    def __init__(self, directory=protocols._DEFAULT_PATH, **kwargs):
-        super(Server, self).__init__(**kwargs)
+    def __init__(self, out=True, **kwargs):
+        super(Server, self).__init__(output=out)
 
-        self.directory = os.path.join(protocols._ROOT_DIRECTORY, directory)
+        # For passing custom parameters to protocols later
+        self.parameters = kwargs
+
         self.childCount = 0
 
     def __str__(self):
@@ -102,10 +102,17 @@ class Server(connection_class.Connection):
                              "\n\tdirection = '%s'" % (protocol, direction),
                              continuation=True)
 
+                    # Valid protocol?
                     if protocol in protocols._PROTOCOLS:
                         protocol = protocols._PROTOCOLS[protocol]
 
-                        socketToConnection[client] = protocol(self, client, direction, address[0]).actions()
+                        # Create protocol (generator) with customized parameters
+                        parameters = protocol._PARAMETERS
+                        socketToConnection[client] = protocol(self,
+                                                              client,
+                                                              direction,
+                                                              address[0],
+                                                              **dict([(arg, self.parameters[arg]) for arg in parameters if arg in self.parameters])).actions()
                         waitForSend.append(client)
 
                     # Bad protocol
@@ -115,7 +122,7 @@ class Server(connection_class.Connection):
                                  "BAD PROTOCOL" % address[0],
                                  messageType="ERR")
 
-                # Quit on standard input
+                # Quit on '\n' from standard input
                 elif s is sys.stdin:
                     self.running = False
                     break
@@ -153,5 +160,5 @@ class Server(connection_class.Connection):
         return True
 
 if __name__ == "__main__":
-    server = Server(directory="helper/serverFiles")
+    server = Server(jobDirectory="classes/serverFiles")
     server.listen()
