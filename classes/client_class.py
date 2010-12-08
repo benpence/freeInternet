@@ -11,7 +11,6 @@ class Client(connection_class.Connection):
     """
 
     def __init__(self, **kwargs):
-        print "HERE"
         super(Client, self).__init__(**kwargs)
 
     def __str__(self):
@@ -88,13 +87,11 @@ class Client(connection_class.Connection):
         return True
 
 if __name__ == "__main__":
-    print "HERE"
     cli = Client()
-    print "HERE"
 
     # Test file protocol
     cli.connect("file", protocols.ProtocolFile._JOB_NEW, jobDirectory="classes/clientFiles")
-    cli.connect("file", protocols.ProtocolFile._JOB_OLD, jobDirectory="classes/clientFiles", jobID=123)
+    cli.connect("file", protocols.ProtocolFile._JOB_OLD, jobDirectory="classes/clientFiles", jobID=0)
 
     # Test echo protocol
     #cli.connect("echo", protocols.ProtocolEcho._FROM_CLIENT)

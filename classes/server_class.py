@@ -3,7 +3,6 @@
 import connection_class
 import socket
 import select
-import os
 import sys
 
 import protocols
@@ -90,10 +89,10 @@ class Server(connection_class.Connection):
                     try:
                         protocol, direction = protocols.Protocol.unpad(client.recv(protocols._CHUNK_SIZE))
                     except socket.error, e:
-                        logging.Logger.log(str(self),
-                                           "[%s] "
-                                           "Error receiving" % address[0],
-                                           messageType = "ERR")
+                        self.log(str(self),
+                                 "[%s] "
+                                 "Error receiving" % address[0],
+                                 messageType = "ERR")
                         self.running = False
                         break
 
@@ -160,5 +159,5 @@ class Server(connection_class.Connection):
         return True
 
 if __name__ == "__main__":
-    server = Server(jobDirectory="classes/serverFiles")
+    server = Server()
     server.listen()

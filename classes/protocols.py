@@ -112,7 +112,7 @@ class ProtocolEcho(Protocol):
         # Client -> Server
         if self.direction == self._FROM_CLIENT:
             # Server
-            if str(self.caller).startswith("server"):
+            if "server" in str(self.caller):
                 return self.recv()
 
             # Client
@@ -122,7 +122,7 @@ class ProtocolEcho(Protocol):
         # Server -> Client
         elif self.direction == self._FROM_SERVER:
             # Server
-            if str(self.caller).startswith("server"):
+            if "server" in str(self.caller):
                 return self.send()
 
             # Client
@@ -222,21 +222,29 @@ class ProtocolFile(Protocol):
     _JOB_NEW = "new"
     _JOB_OLD = "old"
 
-    _PARAMETERS = {"jobDirectory" : os.path.join(_ROOT_DIRECTORY, "classes", "serverFiles")}
+    _PARAMETERS = {"jobDirectory"     : os.path.join(_ROOT_DIRECTORY, "classes", "serverFiles"),
+                   "getJobIDFunction" : lambda : 0,
+                   "updateDatabase"   : lambda : 0}
 
-    def __init__(self, caller, sock, direction, address, jobDirectory=_PARAMETERS["jobDirectory"], jobID=None):
+    def __init__(self, caller, sock, direction, address, jobDirectory=_PARAMETERS["jobDirectory"], jobID=None, getJobIDFunction=_PARAMETERS["getJobIDFunction"], updateDatabase=None):
         super(ProtocolFile, self).__init__(caller, sock, direction, address)
 
         self.directory = os.path.join(_ROOT_DIRECTORY, jobDirectory)
 
-        if jobID:
+        if jobID is not None:
             self.jobID = jobID
+
+        if getJobIDFunction:
+            self.getJobIDFunction = getJobIDFunction
+
+        if updateDatabase:
+            self.updateDatabase = updateDatabase
 
     def actions(self):
         # Server -> Client
         if self.direction == self._JOB_NEW:
             # Server
-            if str(self.caller).startswith("server"):
+            if "server" in str(self.caller):
                 return self.send(self.getJobID())
 
             # Client
@@ -246,7 +254,7 @@ class ProtocolFile(Protocol):
         # Client -> Server
         elif self.direction == self._JOB_OLD:
             # Server
-            if str(self.caller).startswith("server"):
+            if "server" in str(self.caller):
                 return self.recv()
 
             # Client
@@ -261,7 +269,7 @@ class ProtocolFile(Protocol):
             return self.dummyActions()
 
     def getJobID(self):
-        return self.caller.getJobID()
+        return self.getJobIDFunction(self.address)
 
     def send(self, jobID):
         # Send jobID
@@ -270,7 +278,7 @@ class ProtocolFile(Protocol):
 
         # Send filesize
         yield _WAIT_FOR_SEND
-        filepath = os.path.join(self.directory, "%06d.send.tgz" % jobID)
+        filepath = os.path.join(self.directory, "%06d.send" % jobID)
         filesize = bytesLeft = os.path.getsize(filepath)
         self.sendData(str(filesize))
 
@@ -299,7 +307,7 @@ class ProtocolFile(Protocol):
         filesize = bytesLeft = int(self.recvData())
 
         # Receive file binary data
-        filepath = os.path.join(self.directory, jobID + ".recv.tgz")
+        filepath = os.path.join(self.directory, jobID + ".recv")
         file = open(filepath, 'wb')
 
         while bytesLeft > 0:
@@ -311,6 +319,10 @@ class ProtocolFile(Protocol):
             bytesLeft -= _CHUNK_SIZE
 
         file.close()
+
+        # Run adminisrative tasks if necessary
+        if "job_server" in str(self.caller):
+            self.updateDatabase(self.address, int(jobID))
 
         yield None
 

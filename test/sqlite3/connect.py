@@ -33,9 +33,11 @@ c.execute("""\
 # Save (commit) the changes
 conn.commit()
 
-c.execute("select * from jobs order by jobID")
-for row in c:
-    print row
+rows = c.execute("select credit from jobs")
+
+print rows.fetchone() + 5
+#for row in c:
+    #print row
 
 # We can also close the cursor if we are done with it
 c.close()
