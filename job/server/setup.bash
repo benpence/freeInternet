@@ -75,6 +75,7 @@ print "done.\n"
 
 ### Create job binary ###
 print "Replacing 'jobs' folder... "
+rm -rf log*
 rm -rf jobs 
 mkdir jobs 
 rm -rf ../client/jobs 
