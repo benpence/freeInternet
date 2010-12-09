@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 ### Variables ###
-DATABASE_NAME="database.db"
+DATABASE_NAME="../../database.db"
 
 JOB_START=0
 JOB_END=10

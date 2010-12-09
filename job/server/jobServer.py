@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-import sqlite3
+import sqlite
 
 
 import sys
@@ -13,7 +13,7 @@ class ServerJob(server_class.Server):
     def __init__(self):
         super(ServerJob, self).__init__(jobDirectory=os.path.join(os.getcwd(), "jobs"), getJobIDFunction=self.newJob, updateDatabase=self.oldJob)
 
-        self.databaseConnection = sqlite3.connect('database.db')
+        self.databaseConnection = sqlite.connect('../../database.db')
         self.databaseCursor = self.databaseConnection.cursor()
 
     def newJob(self, client):
