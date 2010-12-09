@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import connection_class
 import socket
 

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import logging #Logger class
 
 class Connection(object):
