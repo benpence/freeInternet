@@ -1,6 +1,7 @@
 import os
 import commands
 import re
+import time
 
 #Add helper libraries
 import sys
@@ -14,7 +15,7 @@ class ClientJob(client_class.Client):
 
     def doJob(self):
         # Receive job
-        if not self.connect("file", protocols.ProtocolFile._JOB_NEW, jobDirectory=os.path.join(os.getcwd(), "jobs")):
+        if not self.connect("file",  protocols.ProtocolFile._JOB_NEW, jobDirectory=os.path.join(os.getcwd(), "jobs"), host="savannah.cs.gwu.edu"):
             return False
 
         # Get newest file in 'jobs/' directory
@@ -33,13 +34,17 @@ class ClientJob(client_class.Client):
         commands.getoutput("rm -rf %s jobs/%s" % (filename, ID))
 
         # Send output back
-        self.connect("file", protocols.ProtocolFile._JOB_OLD, jobDirectory=os.path.join(os.getcwd(), "jobs"), jobID=int(ID))
+        self.connect("file", protocols.ProtocolFile._JOB_OLD, jobDirectory=os.path.join(os.getcwd(), "jobs"), jobID=int(ID), host="savannah.cs.gwu.edu")
 
 def Main():
     client = ClientJob()
 
-    while True:
-        client.doJob()
+    try:
+        while True:
+            client.doJob()
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print "Exiting..."
 
 if __name__ == "__main__":
     Main()

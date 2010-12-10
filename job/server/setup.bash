@@ -4,13 +4,9 @@
 DATABASE_NAME="../../database.db"
 
 JOB_START=0
-JOB_END=10
+JOB_END=9
 JOB_INSTANCE_START=0
 JOB_INSTANCE_END=9
-
-CLIENT_START=1
-CLIENT_END=1
-
 
 function print(){
     echo -ne "$1"
@@ -68,6 +64,11 @@ CREATE TABLE credit(
     credit              INTEGER
 );
 
+CREATE TABLE translation(
+    private_ip          VARCHAR,
+    public_ip           VARCHAR PRIMARY KEY
+);
+
 SQL_ENTRY_TAG_2
 
 print "done.\n"
@@ -117,13 +118,20 @@ done
 
 ### Insert clients ###
 print "Creating clients.\n"
-for i in `seq $CLIENT_START $CLIENT_END`; do
-    command="INSERT INTO credit VALUES('127.0.0.$i', 0);"
-    print "\t$command\n"
-    sqlite3 $DATABASE_NAME "$command"
-done
+commands=(
+    "INSERT INTO credit VALUES('128.164.160.198', 0);"
+    "INSERT INTO credit VALUES('128.164.160.199', 0);"
 
-print "\n"
+    "INSERT INTO translation VALUES('10.8.0.10', '128.164.160.198');"
+    "INSERT INTO translation VALUES('10.8.0.6',  '128.164.160.199');"
+    )
+
+
+for ((i=0;i<${#commands};i++)); do
+    command=${commands[${i}]}
+    sqlite3 $DATABASE_NAME "$command"; > /dev/null
+    print "\t$command\n";
+done
 
 
 ### Clean-up ###

@@ -1,3 +1,9 @@
 #!/bin/bash
 
-while /bin/true; do clear; sqlite3 database.db "SELECT * FROM credit;"; sleep 1; done
+while /bin/true; do 
+    clear;
+    sqlite3 -column -header ../../database.db "SELECT * FROM credit;";
+    echo ;
+    sqlite3 -column -header ../../database.db "SELECT * FROM translation;";
+    sleep 5;
+done

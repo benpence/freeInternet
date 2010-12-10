@@ -1,5 +1,5 @@
 import os
-import sqlite
+import sqlite3
 
 
 import sys
@@ -11,7 +11,7 @@ class ServerJob(server_class.Server):
     def __init__(self):
         super(ServerJob, self).__init__(jobDirectory=os.path.join(os.getcwd(), "jobs"), getJobIDFunction=self.newJob, updateDatabase=self.oldJob)
 
-        self.databaseConnection = sqlite.connect('../../database.db')
+        self.databaseConnection = sqlite3.connect('../../database.db')
         self.databaseCursor = self.databaseConnection.cursor()
 
     def newJob(self, client):
@@ -30,7 +30,10 @@ class ServerJob(server_class.Server):
     def oldJob(self, client, jobID):
         self.databaseCursor.execute("UPDATE status SET returned_datetime = DATETIME('NOW') WHERE id = ? AND instance = ?", (jobID / 10, jobID % 10))
 
-        credit = self.databaseCursor.execute("SELECT credit FROM job WHERE id = ?", (str(jobID / 10))).fetchone()[0]
+        input = jobID / 10
+        result = self.databaseCursor.execute("SELECT credit FROM job WHERE id = ?", (str(input)))
+        row = result.fetchone()
+        credit = row[0]
         self.databaseCursor.execute("UPDATE credit SET credit = credit + ? WHERE client = ?", (str(credit), str(client)))
 
         self.databaseConnection.commit()
@@ -44,8 +47,11 @@ class ServerJob(server_class.Server):
         #logging.Logger.log(*args, **kargs)
 
 def Main():
-    server = ServerJob()
-    server.listen()
+    try:
+        server = ServerJob()
+        server.listen()
+    except KeyboardInterrupt:
+        print "Exiting"
 
 if __name__ == "__main__":
     Main()

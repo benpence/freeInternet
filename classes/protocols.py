@@ -4,9 +4,9 @@ import logging
 
 _ROOT_DIRECTORY = "%s%s" % os.getcwd().partition("FreeInternet")[:2]
 
-_DEFAULT_HOST = 'localhost'
+_DEFAULT_HOST = 'savannah.cs.gwu.edu'
 _DEFAULT_PORT = 5555
-_CHUNK_SIZE = 4096
+_CHUNK_SIZE = 512
 
 _JOIN_CHARACTER = "|"
 _PAD_CHARACTER = "."
