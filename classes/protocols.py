@@ -52,6 +52,7 @@ class Protocol(object):
                                "[%s] "
                                "Error writing to file %s" % (str(self), file.name),
                                messageType="ERR")
+            raise StopIteration()
 
     def readFile(self, file, amount=_CHUNK_SIZE):
         try:
@@ -61,7 +62,7 @@ class Protocol(object):
                                "[%s] "
                                "Error reading from file %s" % (str(self), file.name),
                                messageType="ERR")
-            return None
+            raise StopIteration()
         return data
 
 
@@ -76,7 +77,7 @@ class Protocol(object):
                                "[%s] "
                                "Error sending" % str(self),
                                messageType = "ERR")
-            return None
+            raise StopIteration()
         return True
 
     def recvData(self, binary=None):
@@ -90,7 +91,7 @@ class Protocol(object):
                                "[%s] "
                                "Error receiving" % str(self),
                                messageType = "ERR")
-            return None
+            raise StopIteration()
         return data
 
     def actions(self):
