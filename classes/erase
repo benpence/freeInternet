@@ -1,6 +1,0 @@
-#!/bin/bash
-
-rm ./log_*
-rm ./*.pyc
-rm -r serverFiles
-rm -r clientFiles
