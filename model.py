@@ -22,6 +22,7 @@ class Model(object):
     def __init__(self, columns):
         object.__init__(self)
         
+        # These setters are basically a class __init__
         if not hasattr(self.__class__, '_rows'):
             self.__class__._rows = {}
         if not hasattr(self.__class__, '_changes'):
@@ -54,6 +55,11 @@ class Model(object):
         self._init = False
                 
     def __str__(self):
+        """
+        None -> self_string:str
+        
+        Returns in format Class : (value1, value2,...)
+        """
         return "%s : (%s)" % (
             self.__class__.__name__,
             ', '.join((
@@ -62,24 +68,27 @@ class Model(object):
     
     @classmethod
     def search(cls, _max=None, **kwargs):
-        """dict -> list(cls)
+        """
+        _max:int | columns:{column:value} -> [cls]
         
         Query table in this fashion:
-            TableName.search(_count=5,
-                             column_name1=x,
-                             column_name1=y
+            TableName.search(5, # max rows
+                             column_name1=value1,
+                             column_name1=value2
                              )
         """
+        
+        # Return whole table
         if not kwargs and not _max:
             return cls._rows.values()
         
-        # Lookup by hash
+        # Lookup by hash if keys specified
         if set(cls._keys) <= set(kwargs.keys()):
             return cls._rows.get(tuple(kwargs[key]
                                         for key in cls._keys),
                                  ())
 
-        # Lookup manually
+        # Lookup by comparing fields
         results = []
         for (key, row) in cls._rows.items():
             invalid = False
@@ -90,13 +99,19 @@ class Model(object):
             if not invalid:
                 results.append(row)
 
+        # Return value instead of list if desired
         if _max == 1 and results:
             return results[0]
+            
         return results[:_max]
     
     @classmethod
     def _queueChange(cls, key, columns):
-        """list, list -> None"""
+        """
+        key:[str] | columns:[str] -> None
+        
+        Record change to write to database after _CHANGES_BEFORE_WRITE changes
+        """
         
         if cls._reading:
             return
@@ -122,7 +137,11 @@ class Model(object):
 
     
     def __setattr__(self, attr, value):
-        """Add hook to automatically record changes to the database"""
+        """
+        attr:str | value:? -> None
+        
+        Add hook to automatically record changes to the database
+        """
         superSetter = super(Model, self).__setattr__
 
         # Bypass during __init__() to avoid complicated recursion mess
@@ -143,7 +162,11 @@ class Model(object):
 
     @classmethod
     def readIntoMemory(cls, db_path):
-        """Void -> Void :: Read database into memory"""
+        """
+        db_path:str -> None
+        
+        Read database into memory
+        """
         cls._reading = True
 
         cls._rows = {}
@@ -168,7 +191,11 @@ class Model(object):
 
     @classmethod
     def _writeToDatabase(cls, db_path):
-        """Void -> Void :: Write memory to database (on interval, on exit)"""
+        """
+        db_path:str -> None
+        
+        Write memory to database (from cls._changes)
+        """
         
         commands = []
     
@@ -220,6 +247,7 @@ class Model(object):
                 str : "VARCHAR",
             }
         
+            # Determine column datatypes
             sample = cls.search(1)
             
             table_attributes = ', '.join(
@@ -227,19 +255,24 @@ class Model(object):
                             pythonToSQL.get(sample.__getattribute__(column_name).__class__,
                                             "VARCHAR"))
                  for column_name in chain(cls._keys + cls._values)))
+                 
+            # Create table if first write
             create_table = "CREATE TABLE IF NOT EXISTS %s(%s, PRIMARY KEY(%s))" % (
                  cls.__name__,
                  table_attributes,
                  ', '.join(cls._keys))
             cursor.execute(create_table)
                     
-            # Execute commands to update database
+            # Execute commands to mirror database to in-memory changes
             for command in commands:
                 cursor.execute(command)
                     
         cls._changes = {}
 
 class db_connection(object):
+    """
+    Makes database connections easier
+    """
     def __init__(self, path):
         self.path = path
         

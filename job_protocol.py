@@ -1,110 +1,95 @@
 from twisted.protocols import basic
 from twisted.python import log
 
+import common
+
 from job_controller import JobServerController, JobClientController
 
-class JobServerProtocol(basic.LineReceiver):
+_CHUNK_SIZE = 512
+_SEPARATOR = " "
+
+class JobProtocol(basic.LineReceiver):
     _ACTIONS = {
-        "ASSIGN"   : lambda x: x._readFile,
-        "COMPLETE" : lambda x: x._writeFile
+        "RECEIVE" : _sendFile,
+        "SEND"    : _receiveFile,
         }
 
     def connectionMade(self):
         self.ip = self.transport.getPeer().host
-        log.msg("[%s] New Connection" % self.ip)
+        log.msg("[%s] Connection" % self.ip)
         
     def connectionLost(self, reason):
-        log.msg("[%s] Connection Lost" % self.ip)
+        log.msg("[%s] Disconnection" % self.ip)
                 
     def lineReceived(self, line):
-        try:
-            action, filesize = self._splitData(line)
-        except TypeError,
+        """ADD SOME ERROR CHECKING HERE"""
+        data = self._splitData(line)[0]
+        
+        if len(data) != 1:
+            """ERROR OMG"""
+            self.transport.loseConnection()
+            return
+            
+        action = data[0]
+        
+        if action not in self._ACTIONS:
             log.msg("%s][Action] Invalid Action '%s'" % (self.ip, line))
             self.transport.loseConnection()
             return
         
-        if action not in self._ACTIONS or not self._isNumber(filesize):
-            log.msg("%s][Action] Invalid Action '%s'" % (self.ip, line))
-        else:
-            log.msg("[%s] %s %d" % (self.ip, action, filesize))
-            self._ACTIONS[action](filesize)
-
-        self.transport.loseConnection()        
+        log.msg("[%s] %s" % (self.ip, action))
+        self._ACTIONS[action]()
         
     def rawDataReceived(self, data):
         log.msg("[%s][Raw Data] Received %d bytes" % (self.ip, len(data)))
-        self.file.write()
-        print self, data
-    
-    @classmethod
-    def _splitData(cls, data):
         
-        """SPLIT DATA"""
+        self.file.write(data)
         
-        return data
-        
-    def _receiveFile(self):
-        """Sets up protocol to receive a file"""
-        self.filepath = 
-        self.file = open(filepath, 'rb')
-        
-        """RECEIVE FILE"""
-        
-        self.factory.completeJob(self.ip, self.file)
-        
+        if data.endswith("\r\n"):
+            d = self.factory.doneReceiving()
+            d.addCallBack(self.file.close)
+            d.addCallback(self.loseConnection)
+            
     def _sendFile(self):
-        self.filepath = JobServerController.getNewJob()
-        d = self.factory.getNewJob(self.ip)
-        
-        
-        def sendFile(file):
-            self.file = open(filepath, 'wb')
-            
+        def _readFile(fil_path):
+            self.file = open(file_path, 'rb')
+
             for chunk in self._readBytesFromFile(self):
-                self.
-            
-            self.file.close()
+                self.transport.write(chunk)
                 
+            """DID EVERYTHING GO SMOOTHLY?"""
+
+            self.file.close()
+
+        d = self.factory.getFile(self.ip)
         d.addCallback(sendFile)
-        d.addErrback(lambda err: print err)
-        """SEND FILE"""
-    
+
     def _readBytesFromFile(self):
         while True:
-            chunk = self.file.read(chunk_size)
+            chunk = self.file.read(_CHUNK_SIZE)
 
             if chunk:
                 yield chunk
             else:
                 break
-
-    @classmethod    
-    def _isNumber(cls, number):
-        return isinstance(number, (int, long, float, complex))
-
-class JobClientProtocol(basic.LineReceiver):
-
-    def connectionMade(self):
-        ip = self.transport.getPeer().host
-        print self, ip
-
-    def connectionLost(self, reason):
-        self.
-
-    def lineReceived(self, line):
-        print self, line
-
-    def rawDataReceived(self, data):
-        print self, data
-
+                
     def _receiveFile(self):
-        """Sets up protocol to receive a file"""
-        self.file = str(filename)
+        """
+        None -> None
+        
+        Sets up protocol to receive a file
+        """
+        
+        """CHECK FOR FILE PROBLEMS"""
+        
+        self.file_path = "%s" % common._random_hash()
+        
+        self.file = open(filename, 'wb')
+        self.setRawMode()
+            
+    @classmethod
+    def _splitData(cls, data):
 
-    def _sendFile(self):
-        self.type == "server":
-            self.file = JobServerController.getNextJob()    
-    
+        """SPLIT DATA"""
 
-    
+        return data.strip().split(_SEPARATOR)

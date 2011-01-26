@@ -1,9 +1,9 @@
 from twisted.internet import defer
 
+import datetime
+
 from model import Model
 from throttle_model import Throttle
-
-import datetime
 
 class Assign(Model):
     _MAX_INSTANCES = 3
@@ -39,6 +39,7 @@ class Assign(Model):
         
         Mark ip's current job complete
         """
+        
         assign = cls.search(
             1,
             ip=ip,
@@ -46,6 +47,7 @@ class Assign(Model):
         
         if not assign:
             """ERROR: CALL AUTHORITIES"""
+            return
         
         assign.date_returned = datetime.strftime("%Y.%m.%d-%H:%M:%S"))
         assign.results_path = results_path
@@ -58,27 +60,29 @@ class Assign(Model):
         Finds next sequential job that is not assigned
         """
         
-        assigned = cls.search()
+        assigns = cls.search()
         
         # First job assignment?
-        if not assigned:
-            return Job.search(id=0), 0
+        if not assigns:
+            return Job.search(1, id=0), 0
         
         # Get current max job_id
         max_id = max(
             assigned,
             key=lambda x: x.id).id
         
+        # ...corresponding job
         max_job = max((
             filter(
                 lambda x: x.id == max_id,
                 assigned),
             key=lambda x: x.instance)
         
+        # Go on to next job or give out another instance?
         if max_job.instance != cls._MAX_INSTANCES:
             return max_job, max_job.instance + 1
     
-        """ADD TESTING FOR WHEN THERE ARE NO MORE JOBS TO DO"""
+        """TODO: ADD TESTS FOR WHEN THERE ARE NO MORE JOBS TO DO"""
         
         return return defer.succeed(Job.search(1, id=max_job + 1), 0)
         
@@ -93,15 +97,6 @@ class Job(Model):
         'complete',
         'job_path',
         ]
-            
-
-"""
-throttle
-    client
-    
-    credit
-    bandwidth
-"""
 
 def test():
     pass
