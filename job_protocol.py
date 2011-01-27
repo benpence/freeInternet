@@ -2,7 +2,6 @@ from twisted.protocols import basic
 from twisted.python import log
 
 import common
-
 from job_controller import JobServerController, JobClientController
 
 _CHUNK_SIZE = 512
@@ -82,7 +81,7 @@ class JobProtocol(basic.LineReceiver):
         
         """CHECK FOR FILE PROBLEMS"""
         
-        self.file_path = "%s" % common._random_hash()
+        self.file_path = "%s" % common.random_hash()
         
         self.file = open(filename, 'wb')
         self.setRawMode()

@@ -205,7 +205,8 @@ class Model(object):
                     return '"' + element + '"'
                 else:
                     return str(element)
-                    
+            
+            # Create appropriate query        
             if new:
                 command = "INSERT INTO %s" % cls.__name__
             

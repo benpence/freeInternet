@@ -1,13 +1,11 @@
-from twisted.application import internet, service, ILogObserver, FileLogObserver
-from twisted.internet import protocol, reactor, defer
-from twisted.python import log
-
 import commands
+
+from twisted.internet import protocol, defer
+from twisted.python import log
 
 import common
 from job_model import Assign, Job
-
-_PORT = 5555
+from job_protocol import JobProtocol
 
 class JobServerController(protocol.ServerFactory):
     """
@@ -83,56 +81,24 @@ class JobServerController(protocol.ServerFactory):
 
 class JobClientController(protocol.ClientFactory):
     protocol = JobProtocol
+        
+    getFile = getResultsPath
     
-    _FILE_DIRECTORY = "client_jobs"
-    doneReceiving = doJob
-    getFile = sendResults
-    
-    def getResults(self, ip):
+    def getResultsPath(self, ip):
         """
         ip:str -> results_path:str
-        
         """
         
         return self.results_path
             
-    def doJob(self, ip, job_path):
+    def doneReceiving(self, ip, job_path):
         """
         ip:str | job_path:str -> None
         
         """
         
-        """ADD IN FILE CHECKING?"""
+        self.job_path = job_path
         
-        # Decompress job and input data
-        commands.getoutput('tar xzvf %s' % job_path)
-        
-        # Run job on input data
-        commands.getoutput('%s/job < %s/input > %s/output' %
-            tuple(3 * [self._FILE_DIRECTORY]))
-        
-        # Compress results
-        self.filename = common._random_hash()
-        self.results_path = "%s/%s" % (self._FILE_DIRECTORY, self.filename)
-        
-        commands.getoutput('tar cvf %s %s/output' %
-            self.results_path,
-            self._FILE_DIRECTORY)
-        
-        # Remove unnecessary files
-        commands.getoutput('rm %s/job %s/input %s/output' %
-            tuple(3 * [self._FILE_DIRECTORY]))
-
-# For logging
-log_file = DailyLogFile("log", "./")
-application.setComponent(ILogObserver, FileLogObserver(log_file).emit)
-
-# Start up application
-application = service.Application('FreeInternet_Server', uid=1, gid=1)
-factory = JobServerController()
-internet.TCPServer(_PORT, factory).setServiceParent(
-    service.IServiceCollection(application))
-
 def test():
     pass
 
