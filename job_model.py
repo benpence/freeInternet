@@ -1,24 +1,23 @@
-from twisted.internet import defer
-
 import datetime
 
 from model import Model
-from throttle_model import Throttle
+import common
+#from throttle_model import Throttle
 
 class Assign(Model):
-    _MAX_INSTANCES = 3
     
-    _keys = [
-        'id',
-        'instance',
-        ]
-    _values = [
-        'ip',
-        'date_issued',
-        'date_returned',
-        'results_path',
-        'verified',
-        ]
+    
+    _keys = {
+        'id' :          'INTEGER',
+        'instance':     'INTEGER',
+        }
+    _values = {
+        'ip' :          'VARCHAR',
+        'date_issued' : 'VARCHAR',
+        'date_returned':'VARCHAR',
+        'results_path': 'VARCHAR',
+        'verified' :    'VARCHAR',
+        }
 
     @classmethod
     def assign(cls, job, job_instance, ip):
@@ -49,7 +48,7 @@ class Assign(Model):
             """ERROR: CALL AUTHORITIES"""
             return
         
-        assign.date_returned = datetime.strftime("%Y.%m.%d-%H:%M:%S"))
+        assign.date_returned = datetime.strftime("%Y.%m.%d-%H:%M:%S")
         assign.results_path = results_path
 
     @classmethod
@@ -72,34 +71,46 @@ class Assign(Model):
             key=lambda x: x.id).id
         
         # ...corresponding job
-        max_job = max((
+        max_job = max(
             filter(
                 lambda x: x.id == max_id,
                 assigned),
             key=lambda x: x.instance)
         
         # Go on to next job or give out another instance?
-        if max_job.instance != cls._MAX_INSTANCES:
+        if max_job.instance != common._MAX_INSTANCES:
             return max_job, max_job.instance + 1
     
         """TODO: ADD TESTS FOR WHEN THERE ARE NO MORE JOBS TO DO"""
         
-        return return defer.succeed(Job.search(1, id=max_job + 1), 0)
+        return Job.search(1, id=max_job + 1)
         
 
 class Job(Model):
-    _keys = [
-        'id',
-        ]
-    _values = [
-        'credit',
-        'description',
-        'complete',
-        'job_path',
-        ]
+    _keys = {
+        'id' :          'INTEGER',
+        }
+    _values = {
+        'credit' :      'INTEGER',
+        'description' : 'VARCHAR',
+        'complete' :    'VARCHAR',
+        'job_path' :    'VARCHAR',
+        }
 
 def test():
     pass
+
+def __init__():
+    Assign._changes = Assign._rows = {}
+    Assign.writeToDatabase(common._DATABASE_PATH)
+        
+    for i in range(common._MAX_JOBS):
+        hey = Job(id=i,
+            credit=0,
+            description="TEST TEST TEST",
+            job_path=common._SERVER_DIRECTORY+'/'+str(i))
+    Job.writeToDatabase(common._DATABASE_PATH)
+    
 
 if __name__ == '__main__':
     test()

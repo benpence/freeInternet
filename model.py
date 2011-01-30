@@ -1,5 +1,5 @@
 from itertools import chain, izip
-from twisted.internet import defer
+import common
 
 try:
     import sqlite3 as sqlite
@@ -11,7 +11,6 @@ except ImportError, e:
 
 class Model(object):
     _CHANGES_BEFORE_WRITE = 10
-    _DATABASE_PATH = 'database.db'
     
     _CLASS_OBJECTS = {
         "_rows" : {},
@@ -19,7 +18,7 @@ class Model(object):
         "_init" : False,
     }
     
-    def __init__(self, columns):
+    def __init__(self, **columns):
         object.__init__(self)
         
         # These setters are basically a class __init__
@@ -42,15 +41,16 @@ class Model(object):
         
         for column, value in columns.items():
             self.__setattr__(column, value)
-        
-        # Creating new entry
-        self._queueChange(self._keys, columns.keys())
-        
+
         # Insert row into memory
         self._rows[tuple((
             columns[column]
-            for column in self._keys))] = self
+            for column in self._keys))] = self        
+
+        # Creating new entry
+        self._queueChange((columns[key] for key in self._keys), columns.keys(), currentNew=True)
         
+
         # Turn auto-queuing changes on
         self._init = False
                 
@@ -106,7 +106,7 @@ class Model(object):
         return results[:_max]
     
     @classmethod
-    def _queueChange(cls, key, columns):
+    def _queueChange(cls, key, columns, currentNew=False):
         """
         key:[str] | columns:[str] -> None
         
@@ -117,7 +117,6 @@ class Model(object):
             return
         
         key = tuple(key)
-        currentNew = key not in cls._rows
         currentColumns = set(columns)
                     
         # Update change entry
@@ -132,8 +131,8 @@ class Model(object):
             cls._changes[key] = (currentNew, currentColumns)
             
         # Write to disk?
-        if len(cls._changes) == cls._CHANGES_BEFORE_WRITE:
-            cls._writeToDatabase()
+        if len(cls._changes) > cls._CHANGES_BEFORE_WRITE:
+            cls.writeToDatabase(common._DATABASE_PATH)
 
     
     def __setattr__(self, attr, value):
@@ -172,7 +171,7 @@ class Model(object):
         cls._rows = {}
         cls._changes = {}
         
-        with db_connection(cls._DATABASE_PATH) as (db, cursor):
+        with db_connection(db_path) as (db, cursor):
             cursor.execute("SELECT * FROM %s" % cls.__name__)
 
             def unicodeToStr(value):
@@ -181,7 +180,7 @@ class Model(object):
                 else:
                     return value
                     
-            column_names = cls._keys + cls._values
+            column_names = cls._keys.keys() + cls._values.keys()
             for row in cursor.fetchall():
                 cls(
                     dict((
@@ -190,7 +189,7 @@ class Model(object):
         cls._reading = False
 
     @classmethod
-    def _writeToDatabase(cls, db_path):
+    def writeToDatabase(cls, db_path):
         """
         db_path:str -> None
         
@@ -198,13 +197,14 @@ class Model(object):
         """
         
         commands = []
+        
+        def addQuotes(element):
+            if isinstance(element, str):
+                return '"' + element + '"'
+            else:
+                return str(element)
     
         for key, (new, columns) in cls._changes.items():
-            def addQuotes(element):
-                if isinstance(element, str):
-                    return '"' + element + '"'
-                else:
-                    return str(element)
             
             # Create appropriate query        
             if new:
@@ -216,6 +216,7 @@ class Model(object):
                 # Values to be updated
                 values = []
                 
+                print key
                 command += 'VALUES (%s) ' % ', '.join((
                     f(cls._rows[key].__getattribute__(column))
                     for column in columns
@@ -241,21 +242,14 @@ class Model(object):
                         for f in [addQuotes]))
             commands.append(command)
         
-        with db_connection(cls._DATABASE_PATH) as (db, cursor):
-            # Create tables if they don't exist
-            pythonToSQL = {
-                int : "INTEGER",
-                str : "VARCHAR",
-            }
-        
+        with db_connection(db_path) as (db, cursor):
             # Determine column datatypes
             sample = cls.search(1)
             
             table_attributes = ', '.join(
                 ("%s %s" % (column_name, 
-                            pythonToSQL.get(sample.__getattribute__(column_name).__class__,
-                                            "VARCHAR"))
-                 for column_name in chain(cls._keys + cls._values)))
+                            column_type)
+                 for (column_name, column_type) in chain(cls._keys.items(), cls._values.items())))
                  
             # Create table if first write
             create_table = "CREATE TABLE IF NOT EXISTS %s(%s, PRIMARY KEY(%s))" % (
@@ -289,27 +283,27 @@ class db_connection(object):
 
 def test():
     class Person(Model):
-        _keys = [
-            'first_name',
-            'last_name'
-            ]
-        _values = [
-            'height']
+        _keys = {
+            'first_name'    : 'VARCHAR',
+            'last_name'     : 'VARCHAR',
+            }
+        _values = {
+            'height'        : 'INTEGER',
+            }
     
     class Building(Model):
-        _keys = [
-            'name'
-            ]
-        _values = [
-            'height'
-            ]
+        _keys = {
+            'name'          : 'VARCHAR',
+            }
+        _values = {
+            'height'        : 'INTEGER',
+            }
     
-    Person.readIntoMemory('database.db')
     tom = Person.search(1)
     tom.height = 99
-    Person._writeToDatabase('database.db')
+    Person.writeToDatabase('database.db')
     Person.readIntoMemory('database.db')
-    Person._writeToDatabase('database.db')
+    Person.writeToDatabase('database.db')
         
 if __name__ == "__main__":
     test()

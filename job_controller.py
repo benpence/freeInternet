@@ -13,10 +13,8 @@ class JobServerController(protocol.ServerFactory):
     """
     protocol = JobProtocol
     
-    getFile = assign
-    doneReceiving = completeJob
-    
-    def assign(self, ip):
+    @classmethod
+    def assign(cls, ip):
         """
         ip:str -> job_path:str
         
@@ -32,8 +30,10 @@ class JobServerController(protocol.ServerFactory):
             job.job_path))
         
         return defer.succeed(job.job_path)
+    getFile = assign
     
-    def completeJob(self, ip, results_path):
+    @classmethod
+    def completeJob(cls, ip, results_path):
         """
         ip:str | results_path:str -> None
         
@@ -48,7 +48,7 @@ class JobServerController(protocol.ServerFactory):
         
         if not assign:
             """HUGE ERROR EVERYBODY PANIC"""
-            return
+            return defer.succeed()
             
         cls._verifyJob(assign.id, assign.instance, results_path)
         
@@ -65,9 +65,10 @@ class JobServerController(protocol.ServerFactory):
         
         if not job:
             """OH FUCK OH FUCK OH FUCK"""
-            return
+            return defer.succeed()
                 
         """GIVE CREDIT TO THROTTLE job.credit"""
+    doneReceiving = completeJob
         
     @classmethod
     def _verifyJob(cls, job_id, job_instance, results_path):
@@ -82,22 +83,39 @@ class JobServerController(protocol.ServerFactory):
 class JobClientController(protocol.ClientFactory):
     protocol = JobProtocol
         
-    getFile = getResultsPath
     
-    def getResultsPath(self, ip):
+
+    @classmethod
+    def getAssignment(cls):
         """
-        ip:str -> results_path:str
-        """
+        None -> None
         
-        return self.results_path
-            
-    def doneReceiving(self, ip, job_path):
+        Initiates connection to server to get assignment
+        """
+    
+    def sendResults(cls):
+        """"""
+    
+    @classmethod
+    def doneReceiving(cls, ip, job_path):
         """
         ip:str | job_path:str -> None
         
+        Called after job as been transferred
         """
         
-        self.job_path = job_path
+        cls.job_path = job_path
+
+    @classmethod
+    def getResultsPath(cls, ip):
+        """
+        ip:str -> results_path:str
+
+        Called to get the results_path to transfer
+        """
+
+        return cls.results_path
+    getFile = getResultsPath
         
 def test():
     pass

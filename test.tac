@@ -30,6 +30,7 @@ class FingerResource(resource.Resource):
         'username' is a string.
         'request' is a 'twisted.web.server.Request'.
         """
+        
         messagevalue = self.users.get(username)
         username = cgi.escape(username)
         if messagevalue is not None:
