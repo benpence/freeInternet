@@ -1,12 +1,17 @@
 import random
 random.seed()
 
-_DATABASE_PATH = "freeinternet.db"
+_ROOT_DIRECTORY = "/User/ben/Source/twisted/"
 _SERVER_DIRECTORY = "server_files"
 _CLIENT_DIRECTORY = "client_files"
 
+_DATABASE_PATH = "freeinternet.db"
+
 _MAX_JOBS = 100
 _MAX_INSTANCES = 3
+
+_HOST = "127.0.0.1"
+_PORT = 5555
 
 def random_hash():
     """

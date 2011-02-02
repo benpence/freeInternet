@@ -1,3 +1,5 @@
+import commands
+
 from itertools import chain, izip
 import common
 
@@ -7,8 +9,6 @@ except ImportError, e:
     import sqlite
     print "'import sqlite3' failed. Using sqlite"
 
-
-
 class Model(object):
     _CHANGES_BEFORE_WRITE = 10
     
@@ -16,6 +16,11 @@ class Model(object):
         "_rows" : {},
         "_changes" : {},
         "_init" : False,
+    }
+    
+    _SQLITE_CONVERSION = {
+        "VARCHAR" : str,
+        "INTEGER" : int,
     }
     
     def __init__(self, **columns):
@@ -39,8 +44,15 @@ class Model(object):
         # Turn auto-queueing changes off
         self._init = True
         
-        for column, value in columns.items():
-            self.__setattr__(column, value)
+        for column, kind in chain(self._keys.items(), self._values.items()):
+            # Was passed into function
+            if column in columns:
+                self.__setattr__(column, columns[column])
+                
+            # Set to default value for type
+            else:
+                self.__setattr__(column, self._SQLITE_CONVERSION[kind]())
+
 
         # Insert row into memory
         self._rows[tuple((
@@ -48,7 +60,7 @@ class Model(object):
             for column in self._keys))] = self        
 
         # Creating new entry
-        self._queueChange((columns[key] for key in self._keys), columns.keys(), currentNew=True)
+        self._queueChange((columns[key] for key in self._keys), columns.keys(), currentNew=True) 
         
 
         # Turn auto-queuing changes on
@@ -63,8 +75,10 @@ class Model(object):
         return "%s : (%s)" % (
             self.__class__.__name__,
             ', '.join((
-                str(self.__getattribute__(key))
-                for key in chain(self._keys, self._values))))
+                "%s = %s" %
+                    (str(key),
+                    str(self.__getattribute__(key)))
+                    for key in chain(self._keys, self._values))))
     
     @classmethod
     def search(cls, _max=None, **kwargs):
@@ -77,6 +91,13 @@ class Model(object):
                              column_name1=value2
                              )
         """
+        
+        # No rows
+        if not hasattr(cls, '_rows'):
+            if _max == 1:
+                return None
+                
+            return []
         
         # Return whole table
         if not kwargs and not _max:
@@ -132,7 +153,10 @@ class Model(object):
             
         # Write to disk?
         if len(cls._changes) > cls._CHANGES_BEFORE_WRITE:
-            cls.writeToDatabase(common._DATABASE_PATH)
+            if not hasattr(cls, '_DATABASE_PATH'):
+                cls.writeToDatabase(common._DATABASE_PATH)
+            else:
+                cls.writeToDatabase(cls._DATABASE_PATH)
 
     
     def __setattr__(self, attr, value):
@@ -183,7 +207,7 @@ class Model(object):
             column_names = cls._keys.keys() + cls._values.keys()
             for row in cursor.fetchall():
                 cls(
-                    dict((
+                    **dict((
                         (column, unicodeToStr(row[i]))
                         for i, column in enumerate(column_names))))
         cls._reading = False
@@ -216,7 +240,6 @@ class Model(object):
                 # Values to be updated
                 values = []
                 
-                print key
                 command += 'VALUES (%s) ' % ', '.join((
                     f(cls._rows[key].__getattribute__(column))
                     for column in columns
@@ -282,7 +305,10 @@ class db_connection(object):
 
 
 def test():
+    commands.getoutput('rm database.db')
+    
     class Person(Model):
+        _DATABASE_PATH = 'database.db'
         _keys = {
             'first_name'    : 'VARCHAR',
             'last_name'     : 'VARCHAR',
@@ -292,6 +318,7 @@ def test():
             }
     
     class Building(Model):
+        _DATABASE_PATH = 'database.db'
         _keys = {
             'name'          : 'VARCHAR',
             }
@@ -299,11 +326,12 @@ def test():
             'height'        : 'INTEGER',
             }
     
+    for i in range(100):
+        Person(first_name="Tom%d" % i,
+               last_name="Sawyer%d" % i,
+               height=i)
     tom = Person.search(1)
     tom.height = 99
-    Person.writeToDatabase('database.db')
-    Person.readIntoMemory('database.db')
-    Person.writeToDatabase('database.db')
         
 if __name__ == "__main__":
     test()
