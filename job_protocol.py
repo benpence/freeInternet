@@ -54,6 +54,7 @@ class JobProtocol(basic.LineReceiver):
             print "SENT FILE"
             self.transport.write("\r\n")
             
+            print "FILE_PATH = ", file_path
                 
             """DID EVERYTHING GO SMOOTHLY?"""
 
@@ -65,6 +66,7 @@ class JobProtocol(basic.LineReceiver):
         print "SENDING FILE"
         file_path = self.factory.getFile(self.ip)
         print "GOT FILE TO SEND"
+        print "FILE_PATH = ", file_path
         readFile(file_path)
                 
     def _receiveFile(self):

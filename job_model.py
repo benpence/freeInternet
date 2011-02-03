@@ -5,7 +5,6 @@ except ImportError, e:
 
 from model import Model
 import common
-#from throttle_model import Throttle
 
 class Assign(Model):
     _keys = {
@@ -67,6 +66,13 @@ class Assign(Model):
             print Job.search(1, id=0)
             return Job.search(1, id=0), 0
         
+        # Already assigned something but not completed?
+        already_assigned = filter(
+            lambda x: x.ip == ip and x.date_returned == "",
+            assigns)
+        if already_assigned:
+            return Job.search(1, id=already_assigned.id), already_assigned.instance
+        
         # Get max job_id in Assign
         max_id = max(
             assigns,
@@ -83,7 +89,7 @@ class Assign(Model):
             key=lambda x: x.instance)
         
         # Enough instances?
-        if max_assign.instance == common._MAX_INSTANCES:
+        if max_assign.instance + 1 == common._MAX_INSTANCES:
             return Job.search(1, id=max_id + 1), 0
 
         # More instances of same job
@@ -121,8 +127,8 @@ def __init__():
 def test():
     __init__()
 
-    for i in range(10):
-        job, job_instance = Assign.getNextJob()
+    for i in range(20):
+        job, job_instance = Assign.getNextJob("127.0.0.1")
         assert isinstance(job, Job)
         assert isinstance(job_instance, int)
         #print job

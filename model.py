@@ -3,15 +3,7 @@ import commands
 from itertools import chain, izip
 import common
 
-try:
-    import sqlite3 as sqlite
-except ImportError, e:
-    import sqlite
-    print "'import sqlite3' failed. Using sqlite"
-
 class Model(object):
-    _CHANGES_BEFORE_WRITE = 10
-    
     _CLASS_OBJECTS = {
         "_rows" : {},
         "_changes" : {},
@@ -152,7 +144,7 @@ class Model(object):
             cls._changes[key] = (currentNew, currentColumns)
             
         # Write to disk?
-        if len(cls._changes) > cls._CHANGES_BEFORE_WRITE:
+        if len(cls._changes) > common._CHANGES_BEFORE_WRITE:
             if not hasattr(cls, '_DATABASE_PATH'):
                 cls.writeToDatabase(common._DATABASE_PATH)
             else:
@@ -195,7 +187,7 @@ class Model(object):
         cls._rows = {}
         cls._changes = {}
         
-        with db_connection(db_path) as (db, cursor):
+        with common.db_connection(db_path) as (db, cursor):
             cursor.execute("SELECT * FROM %s" % cls.__name__)
 
             def unicodeToStr(value):
@@ -265,7 +257,7 @@ class Model(object):
                         for f in [addQuotes]))
             commands.append(command)
         
-        with db_connection(db_path) as (db, cursor):
+        with common.db_connection(db_path) as (db, cursor):
             # Determine column datatypes
             sample = cls.search(1)
             
@@ -283,25 +275,12 @@ class Model(object):
                     
             # Execute commands to mirror database to in-memory changes
             for command in commands:
+                print command
                 cursor.execute(command)
                     
         cls._changes = {}
 
-class db_connection(object):
-    """
-    Makes database connections easier
-    """
-    def __init__(self, path):
-        self.path = path
-        
-    def __enter__(self):
-        self.db = sqlite.connect(self.path)
-        self.cursor = self.db.cursor()
-        return (self.db, self.cursor)
-        
-    def __exit__(self, type, value, traceback):
-        self.db.commit()
-        self.db.close()
+
 
 
 def test():

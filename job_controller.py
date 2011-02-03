@@ -2,11 +2,14 @@ import commands
 
 from twisted.internet import protocol
 from twisted.python import log
+from twisted.application import internet
 
 import common
 from job_protocol import JobServerProtocol, JobClientProtocol
 from job_model import Assign, Job # Specific to server
 from job_client import JobClient # Specific to client
+from verifier import Verifier
+
 
 class JobServerController(protocol.ServerFactory):
     """
@@ -53,7 +56,7 @@ class JobServerController(protocol.ServerFactory):
             
         cls._verifyJob(assign.id, assign.instance, results_path)
         
-        Assign.complete(ip, file)
+        Assign.complete(ip, results_path)
         
         log.msg("Completing %d-%d %s" % (
             assign.id,
@@ -67,11 +70,8 @@ class JobServerController(protocol.ServerFactory):
             """OH FUCK OH FUCK OH FUCK"""
             return
                 
-        """GIVE CREDIT TO THROTTLE job.credit"""
     doneReceiving = completeJob
        
-       
-        
     @classmethod
     def _verifyJob(cls, job_id, job_instance, results_path):
         """
@@ -80,7 +80,7 @@ class JobServerController(protocol.ServerFactory):
         Return whether or not this job_id has been verified
         """
         
-        return True
+        Verifier.verify()
 
 class JobClientController(protocol.ClientFactory):
     """
@@ -103,13 +103,12 @@ class JobClientController(protocol.ClientFactory):
     def clientConnectionLost(self, connector, reason):
         # Do job if in gettingJob mode
         if self.gettingJob:
-            self.results_path = JobClient.doJob(self.job_path)
-        
-        # Toggle protocol mode
-        self.gettingJob = not self.gettingJob
-        
-        # Reconnect and perform next action
-        connector.connect()
+            self.results_path, shell = JobClient.doJob(self.job_path)
+            self.gettingJob = not self.gettingJob
+            shell.callStack.addCallback(lambda s: connector.connect())
+        else:
+            self.gettingJob = not self.gettingJob
+            connector.connect()
 
     def gotJob(self, ip, job_path):
         """

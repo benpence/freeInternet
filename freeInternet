@@ -1,0 +1,42 @@
+#!/bin/sh
+
+application="$1"
+
+case "$2" in
+
+start)
+	twistd -y $application.tac --pidfile=$application.pid --logfile=logs/$application.log
+;;
+
+
+stop)
+    if [ -e "$application.pid" ]; then
+    	pid=`cat $application.pid`
+    	kill $pid
+    	echo "Stopped $application (pid $pid)"
+    fi
+;;
+
+restart)
+  	$0 $1 stop
+  	$0 $1 start
+;;
+
+status)
+    if [ -e "$application.pid" ]; then
+         echo "Running"
+         exit 0
+    else
+         echo "Not running"
+         exit 1
+    fi
+;;
+
+install) 
+	python setup.py
+;;
+
+*)
+        echo "Usage: $0 {job_server|job_client|throttle_server|throttle_client} {start|stop|restart|status|install}"
+        exit 1
+esac

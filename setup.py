@@ -46,6 +46,10 @@ for i in range(common._MAX_JOBS):
 commands.getoutput("rm -f jobInput job")
 print
 
+write("Creating logs directory...")
+commands.getoutput("mkdir logs")
+print "done."
+
 """
     "INSERT INTO credit VALUES('128.164.160.198', 0);"
     "INSERT INTO credit VALUES('128.164.160.199', 0);"
