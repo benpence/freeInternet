@@ -5,8 +5,6 @@ from twisted.python import log
 
 import common
 
-_CHUNK_SIZE = 512
-
 class JobProtocol(basic.LineReceiver):
     def connectionMade(self):
         self.ip = self.transport.getPeer().host
@@ -16,13 +14,9 @@ class JobProtocol(basic.LineReceiver):
         log.msg("Disconnection")
         
     def rawDataReceived(self, data):
-        print "RAW DATA RECEIVED"
-        log.msg("[Raw Data] Received %d bytes" % len(data))
-        
         self.file.write(data)
         
         if data.endswith("\r\n"):
-            print "DONE RECEIVING"
             self.file.close
             self.factory.doneReceiving(self.ip, self.file_path)
             self.transport.loseConnection()
@@ -38,7 +32,7 @@ class JobProtocol(basic.LineReceiver):
         
         def _readBytesFromFile():
             while True:
-                chunk = self.file.read(_CHUNK_SIZE)
+                chunk = self.file.read(common._CHUNK_SIZE)
 
                 if chunk:
                     yield chunk
@@ -46,27 +40,19 @@ class JobProtocol(basic.LineReceiver):
                     break
 
         def readFile(file_path):
-            print "SENDING FILE"
             self.file = open(file_path, 'rb')
 
             for chunk in _readBytesFromFile():
                 self.transport.write(chunk)
-            print "SENT FILE"
             self.transport.write("\r\n")
             
-            print "FILE_PATH = ", file_path
-                
             """DID EVERYTHING GO SMOOTHLY?"""
 
             self.file.close()
-            print "CLOSING CONNECTION"
             self.transport.loseConnection()
 
         
-        print "SENDING FILE"
         file_path = self.factory.getFile(self.ip)
-        print "GOT FILE TO SEND"
-        print "FILE_PATH = ", file_path
         readFile(file_path)
                 
     def _receiveFile(self):
@@ -95,16 +81,13 @@ class JobServerProtocol(JobProtocol):
         """ADD SOME ERROR CHECKING HERE"""
         
         action = line.strip()
-        print "'%s'" % action
         
         # Valid commands?                        
         if action not in self._ACTIONS:
             log.msg("[Action] Invalid Action '%s'" % line)
             self.transport.loseConnection()
             return
-        
-        log.msg("%s" % action)
-        
+    
         # Perform desired function
         self._ACTIONS[action](self)
 

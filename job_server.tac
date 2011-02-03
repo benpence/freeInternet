@@ -7,13 +7,17 @@ from twisted.python import log
 import common
 from job_controller import JobServerController
 import job_model
+import throttle_model
+import verifier
 
 job_model.__init__()
+throttle_model.__init__()
+verifier.Verifier.init()
 
 factory = JobServerController()
 
-application = service.Application("FreeInternet Server", uid=1, gid=1)
-job_service = internet.TCPServer(common._PORT, factory)
+application = service.Application("FreeInternet Job Server", uid=1, gid=1)
+job_service = internet.TCPServer(common._JOB_PORT, factory)
 
 job_service.setServiceParent(application)
 

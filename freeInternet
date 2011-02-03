@@ -1,18 +1,18 @@
-#!/bin/sh
+#!/bin/bash
 
-application="$1"
+application=$1
 
 case "$2" in
 
 start)
-	twistd -y $application.tac --pidfile=$application.pid --logfile=logs/$application.log
+	sudo twistd -y $application.tac --pidfile=$application.pid --logfile=logs/$application.log
 ;;
 
 
 stop)
     if [ -e "$application.pid" ]; then
     	pid=`cat $application.pid`
-    	kill $pid
+    	sudo kill $pid
     	echo "Stopped $application (pid $pid)"
     fi
 ;;
@@ -33,6 +33,7 @@ status)
 ;;
 
 install) 
+  	$0 $1 stop
 	python setup.py
 ;;
 

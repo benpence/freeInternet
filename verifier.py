@@ -1,19 +1,22 @@
+import itertools
+
 import common
 from job_model import Assign, Job
+from throttle_model import Throttle
 
 class Verifier(object):
+
     @classmethod
     def init(cls):
         """
         None -> None
         
-         
         """
         cls.verifications = {}
         
-        shell = Shell()
-                
-        for assign in Assign.search(verified="")
+        shell = common.Shell()
+        
+        for assign in Assign.search(verified=""):
             # Don't want incomplete jobs
             if assign.date_returned == "":
                 break
@@ -21,13 +24,14 @@ class Verifier(object):
             cls.verify(assign.id, assign.instance, assign.results_path)
     
     @classmethod
-    def verify(id, instance, results_path):
+    def verify(cls, id, instance, results_path):
         """
         id:int | instance:int | results_path:str -> None
     
         """
     
-        shell = Shell()
+        print "Verifying %d-%d" % (id, instance)
+        shell = common.Shell()
         shell.execute(
             "md5 -q %s" % results_path,
             react_function=lambda md5: cls._storeHash(
@@ -44,7 +48,7 @@ class Verifier(object):
         if id not in cls.verifications:
             cls.verifications[id] = [(instance, md5)]
             
-        cls.verifications{id}.append((instance, md5))
+        cls.verifications[id].append((instance, md5))
         
         # Time to validate?
         if len(cls.verifications[id]) + 1 == common._MAX_INSTANCES:
@@ -89,7 +93,7 @@ class Verifier(object):
             # All others fail
             cls._setVerified(
                 (ids
-                 for ids in md5.values()
+                 for ids in md5s.values()
                  if ids != majority_md5),
                 id,
                 "Failed")
@@ -97,19 +101,19 @@ class Verifier(object):
         else:
             # More than one 'max' -> inconclusive
             cls._setVerified(md5.values(), "Inconclusive")
-            
+    
+    @classmethod        
     def _setVerified(cls, md5s, id, conclusion):
         """
         md5s:[[int]] | id:int | conclusion:str -> None
         
         """
-        for instance in chain(*md5s):
+        for instance in itertools.chain(*md5s):
             assign = Assign.search(id=id, instance=instance)
             assign.verified = conclusion
             
             if conclusion == "Passed":
                 credit = Job.search(1, id=id).credit
-                assign.credit += credit
-        
+                
                 """ADD CREDIT THROUGH THROTTLE"""
-        
+                #assign.credit += credit

@@ -275,13 +275,9 @@ class Model(object):
                     
             # Execute commands to mirror database to in-memory changes
             for command in commands:
-                print command
                 cursor.execute(command)
                     
         cls._changes = {}
-
-
-
 
 def test():
     commands.getoutput('rm database.db')

@@ -8,19 +8,17 @@ class JobClient(object):
         job_path:str -> results_path:str
         """
         
+        print "Running job"
+        
         shell = common.Shell()
         
         """ADD IN CHECKING?"""
-        
-        callStack = defer.succeed("None")
-        
-        
-        
+
         # Decompress job and input data
         shell.execute('tar xzv -C %s --file=%s' % (
             common._CLIENT_DIRECTORY,
             job_path,
-            )
+            ))
         
         # Run job on input data
         shell.execute('%s/job' % common._CLIENT_DIRECTORY)

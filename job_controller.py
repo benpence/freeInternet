@@ -2,7 +2,6 @@ import commands
 
 from twisted.internet import protocol
 from twisted.python import log
-from twisted.application import internet
 
 import common
 from job_protocol import JobServerProtocol, JobClientProtocol
@@ -29,9 +28,9 @@ class JobServerController(protocol.ServerFactory):
         job, job_instance = Assign.getNextJob(ip)
         Assign.assign(job, job_instance, ip)
         
-        log.msg("Assigning job %d: %s" % (
+        log.msg("Assigning job %d-%d" % (
             job.id,
-            job.job_path))
+            job_instance))
         
         return job.job_path
     getFile = assign
@@ -48,7 +47,7 @@ class JobServerController(protocol.ServerFactory):
         # Get relevant assignment
         assign = max(
             Assign.search(ip=ip),
-            key=lambda x: x.id)
+            key=lambda x: int("%d%d" % (x.id, x.instance)))
         
         if not assign:
             """HUGE ERROR EVERYBODY PANIC"""
@@ -58,10 +57,9 @@ class JobServerController(protocol.ServerFactory):
         
         Assign.complete(ip, results_path)
         
-        log.msg("Completing %d-%d %s" % (
+        log.msg("Completing %d-%d" % (
             assign.id,
-            assign.instance,
-            assign.results_path))
+            assign.instance))
         
         # Get relevant job
         job = Job.search(1, id=assign.id)
@@ -80,7 +78,7 @@ class JobServerController(protocol.ServerFactory):
         Return whether or not this job_id has been verified
         """
         
-        Verifier.verify()
+        Verifier.verify(job_id, job_instance, results_path)
 
 class JobClientController(protocol.ClientFactory):
     """
@@ -93,11 +91,12 @@ class JobClientController(protocol.ClientFactory):
         self.gettingJob = True
         
     def clientConnectionMade(self):
-        print "SETTING ACTION"
         if self.gettingJob:
+            print "Getting new job"
             self.action = "SEND"
             
         else:
+            print "Sending results"
             self.action = "RECEIVE"
     
     def clientConnectionLost(self, connector, reason):
@@ -116,9 +115,7 @@ class JobClientController(protocol.ClientFactory):
         
         Called after job as been transferred
         """
-        
-        print "doneReceiving(%s, %s)" % (ip, job_path)
-        
+                
         self.job_path = job_path
     doneReceiving = gotJob
     
@@ -129,7 +126,6 @@ class JobClientController(protocol.ClientFactory):
         Called to get the results_path to transfer
         """
         
-        print "getResultsPath(%s)" % ip
         return self.results_path
     getFile = getResultsPath
 

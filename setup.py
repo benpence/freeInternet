@@ -11,12 +11,14 @@ except ImportError, e:
     
 import common
 import job_model
+import throttle_model
 
 write("Deleting old database...")
 commands.getoutput("rm -f %s" % common._DATABASE_PATH)
 print "done."
 
 write("Creating tables...")
+throttle_model.__setup__()
 job_model.__setup__()
 print "done."
 

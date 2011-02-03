@@ -3,10 +3,10 @@ try:
 except ImportError, e:
     from time import strftime
 
-from model import Model
+import model
 import common
 
-class Assign(Model):
+class Assign(model.Model):
     _keys = {
         'id' :          'INTEGER',
         'instance':     'INTEGER',
@@ -63,7 +63,6 @@ class Assign(Model):
         
         # First job assignment?
         if not assigns:
-            print Job.search(1, id=0)
             return Job.search(1, id=0), 0
         
         # Already assigned something but not completed?
@@ -71,7 +70,7 @@ class Assign(Model):
             lambda x: x.ip == ip and x.date_returned == "",
             assigns)
         if already_assigned:
-            return Job.search(1, id=already_assigned.id), already_assigned.instance
+            return Job.search(1, id=already_assigned[0].id), already_assigned[0].instance
         
         # Get max job_id in Assign
         max_id = max(
@@ -98,7 +97,7 @@ class Assign(Model):
         """TODO: ADD TESTS FOR WHEN THERE ARE NO MORE JOBS TO DO"""
         
 
-class Job(Model):
+class Job(model.Model):
     _keys = {
         'id' :          'INTEGER',
         }
@@ -123,6 +122,7 @@ def __setup__():
 def __init__():    
     Assign.readIntoMemory(common._DATABASE_PATH)
     Job.readIntoMemory(common._DATABASE_PATH)
+    Throttle.readIntoMemory(common._DATABASE_PATH)
 
 def test():
     __init__()

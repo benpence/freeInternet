@@ -1,15 +1,26 @@
+# Model
+_DATABASE_PATH = "freeInternet.db"
+_CHANGES_BEFORE_WRITE = 3 # How many rows changed until write to database
+
+# Job System
 _ROOT_DIRECTORY = "/Users/ben/Source/twisted/"
 _SERVER_DIRECTORY = "server_files"
 _CLIENT_DIRECTORY = "client_files"
-
-_DATABASE_PATH = "freeInternet.db"
-_CHANGES_BEFORE_WRITE = 3 # How many rows changed until write to database
+_JOB_PORT = 5555
+_CHUNK_SIZE = 512
 
 _MAX_JOBS = 100
 _MAX_INSTANCES = 3
 
+# General Networking
 _HOST = "127.0.0.1"
-_PORT = 5555
+
+# Throttle
+_THROTTLE_PORT = 6666
+_VPN_INTERFACE = "tun0"
+_THROTTLE_SLEEP = 2
+_IP = "10.8.0.1" # VPN address of server
+_BANDWIDTH_HEURISTIC = 1. / 50
 
 import random
 random.seed()
@@ -55,7 +66,7 @@ class db_connection(object):
 from twisted.internet import utils, defer
 
 class Shell(object):
-    def __init__():
+    def __init__(self):
         self.callStack = defer.succeed("")
     
     def execute(self, shell_command, react_function=None):
@@ -67,22 +78,19 @@ class Shell(object):
                              V             /   V             /
                              react_function    react_function
         """
-        
+
+        def react(output):
+            if react_function:
+                react_function(output)
+    
         words = shell_command.split()
 
         executable = words[0]
         arguments = words[1:]
 
-        def wrapper(last_deferred):
-            deferred = utils.getProcessOutput(executable, arguments, errortoo=True)
-            
-            return deferred
-            
-        def react(current_deferred):
-            if react_function:
-                current_deferred.addCallback(react_function)
-
-            return current_deferred
-        
-        self.callStack.addCallback(wrapper)            
-        self.callStack.addCallback(react)
+        self.callStack.addCallback(
+            lambda s: utils.getProcessOutput(
+                executable,
+                arguments,
+                errortoo=True
+            ).addCallback(react))
