@@ -1,4 +1,5 @@
 import math
+from twisted.python import log
 
 import common
 
@@ -10,6 +11,8 @@ class ThrottleApplication(object):
         credits:[(str, int)] -> None
         
         """
+
+        print "Scheduling"
         
         max_credit = max(
             credits,
@@ -17,20 +20,18 @@ class ThrottleApplication(object):
         
         # This right here is essentially the scheduling, converting the credit to proportional numbers
         numbers = [
-            ((ip,
+            (ip,
               math.log1p(credit + 1) * math.sqrt(max_credit))
-             for (ip, credit) in credits)]
+             for (ip, credit) in credits]
             
-        total_number = sum(
-            numbers,
-            key=lambda x: x[1]
+        total_number = reduce(
+            lambda x, y: x + y,
+            (n
+             for (_, n) in numbers)
         )
-        
-        allocations = (
-            ((ip,
-              number / total_number)
+
+        allocations = ((ip, number / total_number * common._MAX_BANDWIDTH)
              for (ip, number) in numbers)
-        )
         
         return allocations
         
@@ -40,39 +41,41 @@ class ThrottleApplication(object):
         allocations:[(str, int)] -> shell:common.Shell
         
         """
+
+        print "Making allocations"
         
         shell = common.Shell()
         interface = common._VPN_INTERFACE
         
         toRun = (
             # Drop current rules
-            "tc qdisc del dev %s root" % interface,
-            "iptables -t mangle -F",
+            "/sbin/tc qdisc del dev %s root" % interface,
+            "/sbin/iptables -t mangle -F",
 
             # Create queueing discipline on device root
-            "tc qdisc add dev %s root handle 1:0 htb" % interface,
+            "/sbin/tc qdisc add dev %s root handle 1:0 htb" % interface,
             )
 
         # Run above commands
         for command in toRun:
             shell.execute(command)
 
-        # Create node, filter, and iptables mark rule for each client
+        # Create node, filter, and /sbin/iptables mark rule for each client
         for i, (ip, allocation) in enumerate(allocations):
             # Create classes off of root qdisc
-            shell.execute("tc class add dev %s parent 1: classid 1:%d htb rate %.0dbps prio %d" % (
+            shell.execute("/sbin/tc class add dev %s parent 1: classid 1:%d htb rate %sbps prio %d" % (
                 interface,
                 i + 1,
-                allocation * common._BANDWIDTH_HEURISTIC,
+                str(allocation * common._BANDWIDTH_HEURISTIC),
                 i + 1))
 
             # Mark traffic 
-            shell.execute("iptables -t mangle -A POSTROUTING -d %s -j MARK --set-mark %d" % (
+            shell.execute("/sbin/iptables -t mangle -A POSTROUTING -d %s -j MARK --set-mark %d" % (
                 ip,
                 i + 1))
 
             # Filter
-            shell.execute("tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
+            shell.execute("/sbin/tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
                 interface,
                 i + 1,
                 i + 1,

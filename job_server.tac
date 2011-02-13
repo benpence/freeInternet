@@ -1,5 +1,5 @@
 import sys
-sys.path.append("/Users/ben/Source/twisted/")
+sys.path.append("/home/bmp/twistedInternet/")
 
 from twisted.application import internet, service
 from twisted.python import log
@@ -16,7 +16,7 @@ verifier.Verifier.init()
 
 factory = JobServerController()
 
-application = service.Application("FreeInternet Job Server", uid=1, gid=1)
+application = service.Application("FreeInternet Job Server", uid=0, gid=0)
 job_service = internet.TCPServer(common._JOB_PORT, factory)
 
 job_service.setServiceParent(application)
@@ -29,6 +29,7 @@ class ShutdownService(service.Service):
         service.Service.stopService(self)
         job_model.Assign.writeToDatabase(common._DATABASE_PATH)
         job_model.Job.writeToDatabase(common._DATABASE_PATH)
+        throttle_model.Throttle.writeToDatabase(common._DATABASE_PATH)
         
 shutdown_service = ShutdownService()
 shutdown_service.setServiceParent(application)

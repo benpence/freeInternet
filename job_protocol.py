@@ -14,12 +14,15 @@ class JobProtocol(basic.LineReceiver):
         log.msg("Disconnection")
         
     def rawDataReceived(self, data):
-        self.file.write(data)
-        
         if data.endswith("\r\n"):
-            self.file.close
+            data = data[:-2]
+            self.file.write(data)
+            self.file.close()
             self.factory.doneReceiving(self.ip, self.file_path)
             self.transport.loseConnection()
+        else:
+            self.file.write(data)
+        
             
     def _sendFile(self):
         """
@@ -40,6 +43,7 @@ class JobProtocol(basic.LineReceiver):
                     break
 
         def readFile(file_path):
+            self.setRawMode()
             self.file = open(file_path, 'rb')
 
             for chunk in _readBytesFromFile():

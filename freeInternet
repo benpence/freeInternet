@@ -5,7 +5,7 @@ application=$1
 case "$2" in
 
 start)
-	sudo twistd -y $application.tac --pidfile=$application.pid --logfile=logs/$application.log
+	twistd -y $application.tac --pidfile=$application.pid --logfile=logs/$application.log
 ;;
 
 
@@ -34,7 +34,7 @@ status)
 
 install) 
   	$0 $1 stop
-	python setup.py
+	python2.7 setup.py
 ;;
 
 *)

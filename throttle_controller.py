@@ -30,7 +30,7 @@ class ThrottleServerController(protocol.ServerFactory):
         # Sleep until later
         reactor.callLater(
             common._THROTTLE_SLEEP,
-            lambda : cls.update)
+            cls.update)
                 
     @classmethod
     def getBandwidth(cls, ip):

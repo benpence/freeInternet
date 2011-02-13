@@ -33,7 +33,7 @@ class Verifier(object):
         print "Verifying %d-%d" % (id, instance)
         shell = common.Shell()
         shell.execute(
-            "md5 -q %s" % results_path,
+            "md5sum %s" % results_path,
             react_function=lambda md5: cls._storeHash(
                 id,
                 instance,
@@ -45,13 +45,15 @@ class Verifier(object):
         id:int | instance:int | md5:str -> None
         
         """
+
         if id not in cls.verifications:
-            cls.verifications[id] = [(instance, md5)]
-            
-        cls.verifications[id].append((instance, md5))
+            cls.verifications[id] = [(instance, md5[:32])]
+        else:
+            cls.verifications[id].append((instance, md5[:32]))
+
         
         # Time to validate?
-        if len(cls.verifications[id]) + 1 == common._MAX_INSTANCES:
+        if len(cls.verifications[id]) == common._MAX_INSTANCES:
             cls._verifyResults(id)
     
     @classmethod
@@ -101,6 +103,9 @@ class Verifier(object):
         else:
             # More than one 'max' -> inconclusive
             cls._setVerified(md5.values(), "Inconclusive")
+
+        del cls.verifications[id]
+        Throttle.writeToDatabase(common._DATABASE_PATH)
     
     @classmethod        
     def _setVerified(cls, md5s, id, conclusion):
@@ -115,5 +120,5 @@ class Verifier(object):
             if conclusion == "Passed":
                 credit = Job.search(1, id=id).credit
                 
-                """ADD CREDIT THROUGH THROTTLE"""
-                #assign.credit += credit
+                client = Throttle.search(1, ip=assign.ip)
+                client.credit += credit

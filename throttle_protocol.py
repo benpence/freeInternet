@@ -7,11 +7,15 @@ class ThrottleServerProtocol(basic.LineReceiver):
         print "Connection"
     
     def lineReceived(self, line):
+        bandwidth = self.factory.getBandwidth(line)
+
+        print "Tell allocation: ", line, bandwidth, "kB/s"
+
         self.sendLine(
-            str(self.factory.getBandwidth(line)))
+            str(bandwidth))
         self.transport.loseConnection()
     
-    def connectionLost(self):
+    def connectionLost(self, reason):
         print "Disconnection"
 
 class ThrottleClientProtocol(basic.LineReceiver):

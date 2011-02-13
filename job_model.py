@@ -4,6 +4,7 @@ except ImportError, e:
     from time import strftime
 
 import model
+from throttle_model import Throttle
 import common
 
 class Assign(model.Model):
@@ -26,10 +27,18 @@ class Assign(model.Model):
         
         Assign job/job_instance to ip
         """
-        cls(id=job.id,
-            instance=job_instance,
-            ip=ip,
-            date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
+        assign = cls.search(
+            id=job.id,
+            instance=job_instance)
+
+        if assign:
+            assign.ip = ip
+            assign.date_issued=strftime("%Y.%m.%d-%H:%M:%S")
+        else:
+            cls(id=job.id,
+                instance=job_instance,
+                ip=ip,
+                date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
 
     @classmethod    
     def complete(cls, ip, results_path):
@@ -114,7 +123,7 @@ def __setup__():
         
     for i in range(common._MAX_JOBS):
         Job(id=i,
-            credit=0,
+            credit=5,
             description="TEST TEST TEST",
             job_path=common._SERVER_DIRECTORY+'/'+str(i))
     Job.writeToDatabase(common._DATABASE_PATH)
