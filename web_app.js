@@ -8,7 +8,7 @@ $(function() {
     ];
     var images = [
         "img/inspect.png",
-        "img/resume.png"
+        "img/graph.png"
     ];
     
     // Change image

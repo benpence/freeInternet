@@ -22,36 +22,37 @@
 <body>
     <h1>Free Internet Admin Panel</h1>
 
-    <div class="left-side">
-        <div class="toolbar">
-            <a id="inspect">
-                <img id="inspect_icon" src="img/inspect.png" alt="Pause polling the server for values"/>
-                <span id="inspect_text">Inspect</span>
-            </a>
-            <a id="clear">
-                <img src="img/clear.png" alt="Pause polling the server for values"/>
-                <span>Clear</span>
-            </a>
-        </div>
-        <br />
-        <div id="bandwidth"  style="width:800px;height:300px"></div>
-        <div id="proportion" style="width:800px;height:300px"></div>
+    <div class="left-side" id="graphs">
+        <div class="graph" id="bandwidth"></div>
+        <div class="graph" id="bandwidth_proportion"></div>
+        <div class="graph" id="credit"></div>
+        <div class="graph" id="credit_proportion"></div>
     </div>
     
     <div class="right-side">
-        <div class="sidebar">
-            <div class="logo">
-                <img src="img/logo.jpg" style="float: left;" />
-                <div class="credits" style="float: left;">
-                    Free Internet
-                    <br />
-                    By Ben Pence
-                </div>
-            </div>
-            <div id="legend" style="float: left;"></div>
+        <div class="logo">
+            <img src="img/logo.png" />
+            <!--<div class="credits">
+                Free Internet
+                <br />
+                By Ben Pence
+            </div>-->
         </div>
-    </div>
-   
+
+        <div class="toolbar">
+            <div class="tool" id="inspect">
+                <img id="inspect_icon" src="img/inspect.png" alt="Pause polling the server for values"/>
+                <span id="inspect_text">Inspect</span>
+            </div>
+            
+            <div class="tool" id="reset">
+                <img id="reset_icon" src="img/reset.png" alt="Pause polling the server for values"/>
+                <span id="reset_text">Reset</span>
+            </div>
+        </div>
+        
+        <div id="legend"></div>
+    </div>   
 
 </body>
 </html>

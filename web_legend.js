@@ -35,7 +35,7 @@ $(function(){
     var legends = $("#legend");
     legends.each(function () {
         // fix the widths so they don't jump around
-        $(this).css('width', 100);
+        $(this).css('width', 98);
     });
 
     var updateLegendTimeout = null;

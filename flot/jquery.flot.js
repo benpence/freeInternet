@@ -1730,7 +1730,7 @@
                 if (i % options.legend.noColumns == 0) {
                     if (rowStarted)
                         fragments.push('</tr>');
-                    fragments.push('<tr class="legendEntry">');
+                    fragments.push('<tr>');
                     rowStarted = true;
                 }
 
@@ -1738,7 +1738,7 @@
                     label = lf(label, s);
                 
                 fragments.push(
-                    '<td class="legendColorBox"><div onMouseOver="onLegendHover(this)" onClick="onLegendClick(this)" style="border:1px solid ' + options.legend.labelBoxBorderColor + ';padding:1px"><div style="width:4px;height:0;border:5px solid ' + s.color + ';overflow:hidden"></div></div></td>' +
+                    '<td class="legendColorBox"><div style="border:1px solid ' + options.legend.labelBoxBorderColor + ';padding:1px"><div style="width:4px;height:0;border:5px solid ' + s.color + ';overflow:hidden"></div></div></td>' +
                     '<td class="legendLabel">' + label + '</td>');
             }
             if (rowStarted)

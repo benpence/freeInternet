@@ -5,67 +5,14 @@ div.left-side {
 div.right-side {
     float: left;
     position: relative;
-    top: -5px;
-    left: -5px;
-    
-}
-
-.toolbar a {
-    margin: 0 1px 0 1px;
-    background-color: #f5f5f5;
-    border: 1px solid #898989;
-
-    font-family: "Lucida Grande", Tahoma, Arial, Verdana, sans-serif;
-    font-size: 12px;
-    line-height: 130%;
-    font-weight: bold;
-    text-decoration: none;
-    color: #873E35;
-    cursor:pointer;
-    padding:5px 10px 6px 7px; /* Links */
-}
-
-.toolbar a img{
-    margin: 0 3px -3px 0 !important;
-    padding: 0;
-    border: none;
-    width: 16px;
-    height: 16px;
-}
-
-/* STANDARD */
-
-button:hover, .toolbar a:hover {
-    background-color: #f7eEe5;
-    border:1px solid #b76E65;
-    color: #873E35;
-}
-
-.toolbar a:active {
-    background-color: #873E35;
-    /*border:1px solid #6299c5;*/
-    color:#fff;
-}
-
-div#bandwidth, div#proportion {
+    left: -6px;
 }
 
 
 div.sidebar {
-    float: left;
 }
 
-div.toolbar {
-   float: right;
-   padding-right: 6px; 
-   padding-bottom: 2px;
-}
-
-div.credits{
-    position: relative;
-    top: 32px;
-    left: 5px;
-    
+div.credits{    
     color: #999;
     font-family: "Lucida Grande", Tahoma, Arial, Verdana, sans-serif;
     font-size: 10px;
@@ -73,13 +20,15 @@ div.credits{
 }
 
 div#legend {
-    margin-top: 2px;
+    position: relative;
+    top: 2px;
+    left: 1px;
     
-    background: #fff;
     border: 1px solid #898989;
 }
 
-.legendEntry:hover {
+
+/*.legendEntry:hover {
     background-color: #f7eEe5;
     border: 1px solid #b76E65;
 }
@@ -87,4 +36,81 @@ div#legend {
 .legendEntry:active {
     background-color: #873E35;
     color: #fff;
+}*/
+
+/* Graphs */
+div.graph {
+    width: 600px;
+    height: 200px
 }
+
+/* Toolbar */
+.logo img {
+    margin-left: 1px;
+    
+    /*border: 1px solid #898989;*/
+}
+
+div.toolbar {
+    position: relative;
+}
+
+div.tool {
+    }
+
+.tool {
+    position: relative;
+    padding: 7px 0 7px 0;
+    
+    cursor: pointer;
+    
+    margin: 1px 1px 1px 1px;
+    border: 1px solid #898989;
+    padding:5px 10px 6px 7px;
+
+    color: #873E35;
+    /*background-color: #f5f5f5;*/
+    
+    font-family: "Lucida Grande", Tahoma, Arial, Verdana, sans-serif;
+    font-size: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    
+    line-height: 130%;
+    
+    
+}
+
+.tool img{
+    margin: 0 3px -3px 0 !important;
+    padding: 0;
+    border: none;
+    
+    width: 16px;
+    height: 16px;
+}
+
+.tool:hover {
+    color: #873E35;
+    background-color: #f7eEe5;
+}
+
+.tool:active {
+    color:#fff;
+    background-color: #873E35;
+}
+
+/*.tool ::selection {
+	background: #cc0000;
+	color:#fff;
+}
+
+.tool .moz::-moz-selection {
+	background:#cc0000;
+	color:#fff;
+}
+
+.tool .webkit::-webkit-selection {
+	background:#cc0000;
+	color:#fff;
+}*/
