@@ -9,14 +9,22 @@ $(function(){
     }
     
     function draw(graphs_node, graph_name, graph_data){
-        var graph_node = $('#' + graph_name, graphs_node);
-        
         // Create node if it doesn't exist
-        if(!graph_node){
-            /* FILL THIS IN */
+        if(!graph_data.node){
+            graph_data.node = $('
+                <div class="graph" id="' + graph_name + '">
+                    <div class="graph_bar">
+                        <img src="img/minimize.png" id="graph_minimize" />
+                        <img src="img/maximize.png" id="graph_maximize" />
+                    </div>
+                    <div id="graph_plot"></div>
+                </div>
+            ');
+            
+            graphs_data.append(graph_data.node);
         }
         
-        $.plot(graph_node, graph_data.lines, graph_data.options);
+        $.plot(graph_data.node, graph_data.lines, graph_data.options);
     }
     
     function updateForever(data){
