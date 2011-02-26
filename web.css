@@ -39,7 +39,7 @@ div#legend {
 }*/
 
 /* Graphs */
-div.graph {
+div.#graph_plot {
     width: 600px;
     height: 200px
 }
