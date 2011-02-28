@@ -1,7 +1,17 @@
-$(function() {
-    function inspect(){
-    }
-    
+var doInspect;
+
+$(function (){
+    doInspect = function(){
+        inspect = !inspect;
+        
+        if(inspect){
+            $('.highcharts-legend').hide()
+        } else {
+            $('.highcharts-legend').show()
+        }
+        
+    };
+
     var texts = [
         "Inspect",
         "Graph"
@@ -10,33 +20,21 @@ $(function() {
         "img/inspect.png",
         "img/graph.png"
     ];
-    
-    // Change image
-    $("#inspect").mouseup(function() {
-        // Change text
-        var icon = $("#inspect_icon");
-        
-        if(icon.attr("src").indexOf("inspect") != -1){
-            inspect();
-        }
-        
+
+    $("#inspect").click(function () {
+        var icon = $("#inspect_icon", $(this));
+
         icon.attr(
             "src",
-            images[
-                (images.indexOf(
-                    icon.attr("src")
-                ) + 1) % 2
-            ]
+            images[Number(inspect)]
+        );
+    
+        var text = $("#inspect_text", $(this));
+        text.text(
+            texts[Number(inspect)]
         );
         
-        var text = $("#inspect_text");
-        text.html(
-            texts[
-                (texts.indexOf(
-                    text.text()
-                ) + 1) % 2
-            ]
-        );
+        doInspect();
     });
 });
 
@@ -45,6 +43,6 @@ function onLegendHover(legend_box){
 }
 
 function onLegendClick(legend_box){
-    legend_box.setAttribute()
+    
 }
 
