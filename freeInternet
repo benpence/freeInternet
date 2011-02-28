@@ -34,7 +34,7 @@ status)
 
 install) 
   	$0 $1 stop
-	python2.7 setup.py
+	python setup.py
 ;;
 
 *)
