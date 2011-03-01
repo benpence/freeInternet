@@ -4,6 +4,7 @@ var inspect = false;
 $(function(){
     // Constants
     var TIMESTEP = 1;
+    var TIME_HEURISTIC = 30;
     var MAX_POINTS = 10;
     var CHARTS_NODE = $('#charts');
     
@@ -11,12 +12,14 @@ $(function(){
         {
             name: "Credit",
             data_name: "credit",
-            proportion: false
+            proportion: false,
+            units: "Credits",
         },
         {
-            name: "Bandwidth Proportions",
+            name: "Bandwidth",
             data_name: "bandwidth",
-            proportion: true
+            proportion: true,
+            units: "kB/s",            
         }
     ];
         
@@ -40,28 +43,28 @@ $(function(){
         
         var now = new Date().getTime();
         if(!inspect){
-        $.each(CHARTS_TO_GRAPH, function(i, chart_to_graph){
-            var chart_name = chart_to_graph.name;
-            var chart = charts[chart_name];
+            $.each(CHARTS_TO_GRAPH, function(i, chart_to_graph){
+                var chart_name = chart_to_graph.name;
+                var chart = charts[chart_name];
         
-            var shift = charts[chart_name].series[0].data.length == MAX_POINTS;
+                var shift = charts[chart_name].series[0].data.length == MAX_POINTS;
                         
             
-            // For each ip
-            var j = 0;
-            $.each(data[chart_to_graph.data_name], function(ip, value){
-                // Add point
-                chart.series[j].addPoint(
-                    [now, value],
-                    false, // redraw?
-                    shift  // shift points?
-                );
-                j++;
+                // For each ip
+                var j = 0;
+                $.each(data[chart_to_graph.data_name], function(ip, value){
+                    // Add point
+                    chart.series[j].addPoint(
+                        [now, value],
+                        false, // redraw?
+                        shift  // shift points?
+                    );
+                    j++;
+                });
+            
+                chart.redraw();
+            
             });
-            
-            chart.redraw();
-            
-        });
         }
         
         setTimeout(
@@ -78,7 +81,7 @@ $(function(){
 
             Inserts new graph DOM divs in graph_node (if necessary) and plots them
         */
-        function defaultOptions(name, id, proportion){
+        function defaultOptions(name, id, units, proportion){
             var options = {
                 title: {
                     text: name + " over Time"
@@ -86,7 +89,7 @@ $(function(){
                 chart: {
                     renderTo: id + '_chart',
                     animation: {
-                        duration: TIMESTEP * 1000,
+                        duration: TIMESTEP * 1000 - TIME_HEURISTIC,
                         easing: 'linear'
                         
                     },
@@ -98,11 +101,34 @@ $(function(){
                     type: 'datetime'
                 },
                 yAxis: {
-                    
+                    title: {
+                        text: units,
+                    }
                 },
+                tooltip: {
+                    crosshairs: true,
+                    shared: true,
+                    formatter: function() {
+                        var output = '<b>' + Highcharts.dateFormat("%M:%S", this.x) + '</b>';
+                         
+                        $.each(this.points, function(i, point){
+                            output += '<br/>' + 
+                                '<span style="color: ' + point.series.color + ';">' + point.series.name + '</span>' +
+                                ':'+
+                                '<b>' + Highcharts.numberFormat(this.y, 0, ',') + '</b>';
+                            if(proportion){
+                                output += ' ('+ Highcharts.numberFormat(this.percentage, 1) + '%)';
+                            }
+                        });
+                        return output;
+                     }
+                },
+
                 legend: {
-                    enabled: false,
-                    //layout: 'vertical'
+                    enabled: true,
+                    layout: 'vertical',
+                    align: 'right',
+                    verticalAlign: 'top',
                 },
                 series: []
             }
@@ -126,10 +152,11 @@ $(function(){
                     },
                     plotOptions: {
                         areaspline: {
+                            //enableMouseTracking: false,
                             stacking: 'normal',
                             marker: marker
                         },
-                    }
+                    },
                 });
             } 
             
@@ -139,6 +166,7 @@ $(function(){
                 },
                 plotOptions: {
                     spline: {
+                        //enableMouseTracking: false,
                         marker: marker
                     }
                 }
@@ -152,17 +180,17 @@ $(function(){
             var id = chart_name.replace(" ", "_");
             var chart_node = $(
                 '<div class="graph" id="' + id + '">' +
-                    '<div class="graph_bar">' +
+                    /*'<div class="graph_bar">' +
                         '<img src="img/minimize.png" id="graph_minimize" />' +
                         '<img src="img/maximize.png" id="graph_maximize" />' +
-                    '</div>' +
+                    '</div>' +*/
                     '<div id="' + id + '_chart" style="width: 600px; height: 200px;"></div>' +
                 '</div>'
             );
             CHARTS_NODE.append(chart_node);
             
             // Create chart
-            var options = defaultOptions(chart_name, id, chart_to_graph.proportion);
+            var options = defaultOptions(chart_name, id, chart_to_graph.units, chart_to_graph.proportion);
 
             for(var ip in data[chart_to_graph.data_name]){
                 options.series.push({
@@ -184,14 +212,14 @@ $(function(){
             Streamlines ajax calls with data callback function
         */
         $.ajax({
-            url: "test" + (count++ % 6) + ".json",
+            url: "data.json",
             method: 'GET',
             dataType: 'json',
             success: callback
         });
     }       
     
-    var count = 0;
+    //var count = 0;
     charts = {};
 
     // Start loop

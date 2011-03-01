@@ -29,12 +29,14 @@ def __setup__():
     Throttle(
         ip="128.164.160.197",
         vpn_ip="10.8.0.6",
-        credit=0,
+        credit=10,
+        bandwidth=10
         )
     Throttle(
         ip="128.164.160.199",
         vpn_ip="10.8.0.10",
-        credit=0,
+        credit=10,
+        bandwidth=10
         )
     Throttle.writeToDatabase(common._DATABASE_PATH)
 

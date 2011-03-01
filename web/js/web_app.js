@@ -4,12 +4,19 @@ $(function (){
     doInspect = function(){
         inspect = !inspect;
         
-        if(inspect){
-            $('.highcharts-legend').hide()
-        } else {
+        /*if(inspect){
             $('.highcharts-legend').show()
-        }
+        } else {
+            $('.highcharts-legend').hide()
+        }*/
         
+        /*$.each(charts, function(key, chart){
+            chart.setSize(400, 200);
+        });*/
+        
+        $('.highcarts-grid')
+            .width(400)
+            .height(400);
     };
 
     var texts = [
@@ -24,6 +31,8 @@ $(function (){
     $("#inspect").click(function () {
         var icon = $("#inspect_icon", $(this));
 
+        doInspect();
+        
         icon.attr(
             "src",
             images[Number(inspect)]
@@ -33,8 +42,6 @@ $(function (){
         text.text(
             texts[Number(inspect)]
         );
-        
-        doInspect();
     });
 });
 

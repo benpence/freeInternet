@@ -2,7 +2,7 @@
 _CHANGES_BEFORE_WRITE = 3 # How many rows changed until write to database
 
 # Job System
-_ROOT_DIRECTORY = "/home/bmp/twistedInternet"
+_ROOT_DIRECTORY = "/Users/ben/Source/freeInternet"
 _DATABASE_PATH = "%s/freeInternet.db" % _ROOT_DIRECTORY
 _SERVER_DIRECTORY = "server_files"
 _CLIENT_DIRECTORY = "client_files"
@@ -22,6 +22,9 @@ _THROTTLE_SLEEP = 2
 _IP = "10.8.0.1" # VPN address of server
 _MAX_BANDWIDTH = 4000
 _BANDWIDTH_HEURISTIC = 18
+
+# Web
+_WEB_PORT = 7777
 
 import random
 random.seed()
