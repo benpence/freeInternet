@@ -38,6 +38,6 @@ install)
 ;;
 
 *)
-        echo "Usage: $0 {job_server|job_client|throttle_server|throttle_client} {start|stop|restart|status|install}"
+        echo "Usage: $0 {job_server|job_client|throttle_server|throttle_client|web} {start|stop|restart|status|install}"
         exit 1
 esac

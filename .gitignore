@@ -1,0 +1,5 @@
+# Ignore these files
+._*
+*.swp
+*.pyc
+*.db

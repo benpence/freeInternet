@@ -2,7 +2,7 @@ var doInspect;
 
 $(function (){
     doInspect = function(){
-        inspect = !inspect;
+        charts.inspect = !charts.inspect;
         
         /*if(inspect){
             $('.highcharts-legend').show()
@@ -35,12 +35,12 @@ $(function (){
         
         icon.attr(
             "src",
-            images[Number(inspect)]
+            images[Number(charts.inspect)]
         );
     
         var text = $("#inspect_text", $(this));
         text.text(
-            texts[Number(inspect)]
+            texts[Number(charts.inspect)]
         );
     });
 });

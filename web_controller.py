@@ -9,8 +9,6 @@ import throttle_model
 class WebController(Site):
     def __init__(self):
         Site.__init__(self, WebProtocol(self))
-        
-        throttle_model.__setup__()
     
     def json(self):
         throttle_model.Throttle.readIntoMemory(common._DATABASE_PATH)
