@@ -1,0 +1,358 @@
+$Header: /net/cvs/bwtest/pathload/README,v 1.32 2006/05/19 22:34:59 jain Exp $
+
+Pathload Release  : Ver 1.3.2
+
+Contents
+-------- 
+Overview of Pathload
+Building Pathload
+Running Pathload
+Examples
+Interpreting Pathload output
+Contact and other info
+
+
+Overview of Pathload
+--------------------
+Pathload is a tool for estimating the available bandwidth
+of an end-to-end path from a host S (sender) to a host R (receiver). 
+The available bandwidth is the maximum IP-layer 
+throughput that a flow can get in the path from S to R, 
+without reducing the rate of the rest of the traffic in the path. 
+
+The estimation algorithm of Pathload is based on the SLoPS methodology,
+which is described in: 
+"Pathload : A measurement tool for end-to-end available bandwidth",
+by Manish Jain and Constantinos Dovrolis, published at PAM 2002.
+That paper is available at:
+http://www.cc.gatech.edu/~dovrolis/Papers/pam02.ps
+A more extensive study of available bandwidth is given in:
+"End-to-End Available Bandwidth: Measurement methodology, Dynamics, and 
+Relation with TCP Throughput", in Proceedings of ACM SIGCOMM in August 2002. 
+That paper is available at:
+http://www.cc.gatech.edu/~dovrolis/Papers/sigcomm02.ps.gz
+
+Briefly, Pathload is based on the following key idea: 
+When a process at S sends a periodic stream of UDP packet 
+at a rate higher than the available bandwidth in the path,
+the relative one-way packet delays show an increasing trend.
+When the stream rate is lower than the available bandwidth, the 
+relative one-way packet delays show no consistent trend.
+
+Pathload consists of a process running at S and a process running at R.
+S sends periodic streams of UDP packets from S to R at a certain rate. 
+Pathload does not determine whether a particular rate (Tr) is 
+greater than available bandwidth (A) based on just one stream.
+Instead, it sends "a fleet of N streams", so that it has N samples
+to decide whether Tr > A, or not.
+
+Upon the receipt of a complete fleet, R checks if there is an increasing 
+trend in the relative one-way packet delays in each stream. 
+If a large fraction f of the N streams in a fleet show increasing trend,
+then the entire fleet is said to have increasing trend and the
+next fleet rate is lower than Tr.
+If a large fraction f of streams in a fleet show no trend, then the 
+entire fleet is said to have no trend and the next fleet rate is higher 
+than Tr.
+
+A certain fleet rate falls into the `grey region' when less than f x N 
+streams of the fleet show increasing trend, and less than f x N streams 
+show no trend.
+This can happen when the available bandwidth was more than fleet rate
+for some streams and less than the fleet rate for some other streams.
+In other words, the available bandwidth during the fleet duration varied
+above and below the fleet rate, causing some streams to show increasing 
+trend and others to show no trend. 
+
+The iterative estimation algorithm of Pathload terminates when:
+- the rate of two successive fleet is less than a user-specified resolution,
+- or, the available bandwidth varies in a `grey-region', which is larger
+than the user-specified resolution. 
+
+
+Building Pathload
+-----------------
+Pathload uses the standard configure/make approach.
+$> ./configure
+$> make
+
+After you have extracted the Pathload code in a directory,
+run configure in that directory. Then run make.
+
+You should then have two executables in the Pathload directory.
+1. pathload_snd (to be run at the sender)
+2. pathload_rcv (to be run at the receiver)
+
+
+
+Running Pathload
+----------------
+
+sender 
+   To do available bandwidth estimation, first run pathload_snd at the sender S:
+   $> pathload_snd [-i] [-h|-H] [-q]
+
+   [-i] By default, pathload_snd will exit after 1 measurement.
+   Use switch -i to run sender in iterative (persistent) mode.
+   
+   [-q] By default, sender sends minimal output (fleet rate) to terminal 
+   (stdout). To completely disable any message on stdout,
+   use -q (quite mode).  
+
+receiver 
+   Then, run pathload_rcv at the receiver R:
+   $> pathload_rcv [-q|-v] [-o|-O <filename>] [-N <filename>][-w <bw_resol>] 
+      [-h|-H] [-t <timeout in sec>] -s <sender>
+        -s        : hostname/ipaddress of sender
+        -q        : quite mode
+        -v        : verbose mode
+        -w        : user specified bandwidth resolution
+        -o <file> : write log to user specified file [default is pathload.log]
+        -O <file> : append log to user specified file [default is pathload.log]
+        -N <file> : append output in netlogger format to <file>
+        -t <time> : timeout value in seconds
+        -h|-H     : print this help and exit
+      
+   [-o] By default, receiver always appends detailed output to file "pathload.log". 
+   The output file can be changed by specifying a filename with -o switch. Note that 
+   if the specified file already exits, it will be over-written.
+
+   [-O] Similar to -o except that the log is appended to the file.
+   
+   [-q,-v] By default, receiver sends minimal output (fleet rate and final 
+   result) to terminal (stdout). To completely disable any message on stdout,
+   use -q (quite mode).  To enable detailed output on screen, use -V (Verbose
+   mode). Note that, log file (user specified or "pathload.log") contains 
+   exactly the same output as -V.
+   
+   [-N] Specify a file name to store output in netlogger compatible format.
+
+   [-w] By default, bandwidth resolution (bw-resol) is set to a fraction
+   of the Average Dispersion Rate (ADR) in the path. 
+   To change default bw-resol use -w.  bw-resol allows the user to select 
+   the precision with which Pathload should try to estimate the available 
+   bandwidth. Keep in mind that the available bandwidth is a dynamically varying
+   metric, and so its variation range may be wider than the user-specified 
+   resolution. In that case, Pathload will report the "grey region",
+   which is an estimate of the variation range of the available bandwidth. 
+
+   [-t] Specified the timeout value. If the total execution time of the process 
+    exceeds the timeout value, terminate the pathload receiver.
+
+EXAMPLES
+--------
+Say you want to measure the available bandwidth from 
+host A to host B. 
+Run pathload_snd at A and pathload_rcv at B.
+
+At host A,
+$> ./pathload_snd
+
+At host B,
+$> ./pathload_rcv -h A 
+In this example, the sender will terminate after the receiver completes one
+measurement. 
+The detailed output will be logged to default file "pathload.log".
+
+Now, if you wanted to change the default log file at receiver B:
+$> ./pathload_rcv -h A -o testrun.log
+
+If you also wanted detailed output on screen as well netlogger output:
+$> ./pathload_rcv -h A -o testrun.log -N netlogger.log -V
+
+
+
+Interpreting the Pathload output
+--------------------------------
+
+Sample default output on receiver :-
+Line # | Actual output
+~~~~~~~~~~~~~~~~~~~~~~
+Line 1 : jawks [507]$ ./pathload_rcv -h sirius
+Line 2 : Receiver jawks starts measurements on sender sirius at Sun Apr \
+         6 15:29:44 2003
+Line 3 : Receiving Fleet 0, Rate 97.40Mbps
+Line 4 : Receiving Fleet 1, Rate 193.55Mbps
+Line 5 : Receiving Fleet 2, Rate 145.47Mbps
+Line 6 : Receiving Fleet 3, Rate 121.44Mbps
+Line 7 : Receiving Fleet 4, Rate 109.42Mbps
+Line 8 : Receiving Fleet 5, Rate 103.41Mbps
+Line 10:         *****  RESULT *****
+Line 11: Available bandwidth range : 97.40 - 103.41 (Mbps)
+Line 12: Measurements finished at Sun Apr  6 15:29:44 2003
+Line 13: Measurement latency is 5.69 sec
+
+Explanation :-
+     Line 1 Shows the command executed for this run of Pathload.
+     Line 2 Shows the sender and receiver hostname and start time of 
+            measurements.
+     Line 3-8 Show the various rates that Pathload tries iteratively
+            to estimate avail-bw range.
+     Line 11 Shows the final estimate of available bandwidth range.
+     Line 12 Shows the finish time.
+     Line 13 Gives the total time taken for measurement. 
+
+
+Sample detailed output on receiver (same as in log file):
+(not a complete snapshot, but shows all the different message output)
+  
+Line 1 : Receiver jawks starts measurements on sender sirius at Sun Apr \
+         6 15:29:44 2003 
+Line 2 :   Maximum packet size          :: 1472 bytes
+Line 3 :   send latency @sndr           :: 4 usec
+Line 4 :   recv latency @rcvr           :: 5 usec
+Line 5 :   Minimum packet spacing       :: 10 usec
+Line 6 :   Max rate(max_pktsz/min_time) :: 1200.00Mbps
+Line 7 :   ADR [.]                      :: 97.40Mbps
+Line 8 :   Grey bandwidth resolution    :: 4.87
+Line 9 : 
+Line 10: 
+Line 11: Receiving Fleet 0
+Line 12:   Fleet Parameter(req)  :: R=97.40Mbps, L=946B, K=100packets, T=80usec
+Line 13:   Lossrate per stream   :: :0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0:0.0
+Line 14:   # of CS @ sndr        :: : 0: 0: 0: 0: 0: 0: 0: 0: 0: 0: 0
+Line 15:   # of CS @ rcvr        :: : 1: 0: 0: 1: 0: 0: 0: 0: 2: 0: 1
+Line 16:   # of DS @ rcvr        :: : 1: 0: 0: 1: 0: 0: 0: 0: 2: 0: 1
+Line 17:   Fleet Parameter(act)  :: R=93.88Mbps, L=946B, K=100packets, T=83usec
+Line 18:   PCT metric/stream[12] :: 0.09:0.27:0.27:0.36:0.09:0.09:0.18:0.27:0.36:0.09:0.09:0.20:
+Line 19:   PDT metric/stream[12] :: 0.33:0.28:0.00:0.68:-0.14:-0.11:-0.20:-0.03:0.41:-0.33:-0.50:0.12:
+Line 20:   PCT Trend/stream [12] :: NNNNNNNNNNNN
+Line 21:   PDT Trend/stream [12] :: NNNINNNNUNNN
+Line 22:   Trend per stream [12] :: NNNUNNNNNNNN
+Line 23:   Aggregate trend       :: NO TREND
+Line 24:   Rmin-Rmax             :: 97.40-0.00Mbps
+Line 25:   Gmin-Gmax             :: 0.00-0.00Mbps
+Line 26: 
+Line 27: 	*****  RESULT *****
+Line 28: Available bandwidth range : 99.59 - 102.91 (Mbps)
+Line 29: Measurements finished at Sun Apr  6 15:37:02 2003 
+Line 30: Measurement latency is 5.83 sec 
+
+Explanation :-
+     Line 2 Minimum of of the maximum packet sizes on sender and receiver.
+     Line 3 Latency of "send" system call at sender.
+     Line 4 Latency of "recv" system call at receiver.
+     Line 5 Two times the maximum of "send" and "recv" latency.
+     Line 6 Maximum rate which can be measured.
+     Line 7 Asymptotic dispersion rate, used as the rate of first fleet.
+     Line 8 Grey bandwidth resolution.
+          
+     Line 11-25 Information corresponding to each fleet 
+     Line 11 Shows the fleet number.
+     Line 12 Shows the fleet parameters that the receiver requested from the
+             sender: 
+              R (rate of fleet)
+              L (packet size)
+              K (number of packet per stream)
+              T (inter-packet spacing)
+     Line 13 Shows the loss rate per stream, with ":" used as separator.
+     Line 14 Shows the number of instances when sender side processes was 
+             "possibly" interrupted while sending stream.
+     Line 15 Shows the number of instances when receiver side processes was 
+             "possibly" interrupted while receiving stream.
+     Line 16 Shows the number of packets received when receiver side process
+             was interrupted.
+     Line 17 Shows the actual fleet parameters (same format as in line 2).
+     Line 18 Shows the actual PCT metric for relative one-way packet delay 
+             trend per stream.
+     Line 19 Shows the actual PDT metric for relative one-way packet delay
+             trend per stream.
+     Line 20 Shows the one-way delay trend, per stream, using PCT.
+              I  - Increasing trend.
+              N  - No trend.
+              U  - Unusable.
+     Line 21 Shows the one-way delay trend, per stream, using PDT.
+              I  - Increasing trend.
+              N  - No trend.
+              U  - Unusable.
+     Line 22 Shows trend of stream, after combining result of PCT and PDT.
+              I  - Increasing trend.
+              N  - No trend.
+              U  - Unusable.
+     Line 23 Shows the aggregate trend of the fleet. Possible values are:
+              INCREASING 
+              NOTREND
+              GREY
+     Line 24 Shows current value of (Rmin, Rmax) after current fleet.
+              Rmin - maximum rate which showed No trend.
+              Rmax - minimum rate which showed Increasing trend.
+     Line 25 Shows current value of (Gmin, Gmax) after current fleet.
+              Gmax - maximum rate (< Rmax) which showed grey region.
+              Gmin - minimum rate (> Rmin) which showed grey region.
+     Line 27-30 Result of Pathload
+     Line 28 Available bandwidth range during the measurement period
+     Line 30 Total time taken for measurement
+
+Finally, Pathload exits with one of the following messages :-
+
+1. Avail-bw < minimum sending rate.
+   Increase MAX_TIME_INTERVAL in pathload_rcv.h from 200000 usec to a
+   higher value.
+
+   Sending rate of stream is determined by packet size and spacing
+   between packets.  MAX_TIME_INTERVAL in pathload_rcv.h is currently
+   set to 200000 usec.  If you want to probe at rates lower than
+   possible with current version of tool, increase this value to
+   higher and recompile the code.  
+
+2. Avail-bw > maximum sending rate.
+
+   This constraint limits the maximum rate that Pathload can generate.
+   Maximum rate depends on the maximum packet size and time latency of
+   send/recv call.  If that rate is reached at a certain fleet, the
+   tool does not proceed any further.
+   
+3. Measurement terminated due high rate of CS @ sender/receiver.
+   
+   It implies that either the sender or receiver host was interrupted
+   while sending a single stream. This could be due to a lot of CPU
+   intensive processes running on either host.  In the log file, two
+   fields "# of CS @ sndr" and "# of CS @ rcvr" will give some
+   indication as to which host is causing context switching in
+   Pathload.
+
+   Another reason may be, if you are sure that your machine is lightly
+   loaded, that packet stream experienced interrupt coalescing (IC) at
+   the receiver side NIC.  The current algorithm in pathload includes
+   algorithm to detect IC, however it has been tested on NICs from two
+   vendors. Since vendors may implement   IC differently, IC may be
+   incorrectly interpreted as CS.
+
+4. Exiting due to user specified resolution.
+
+   The user specified resolution could be achieved.
+
+5. Exiting due to grey bw resolution.
+
+   Gmin and gmax range determine the grey bw resolution and pathload
+   determines when the range is close enough to report as final
+   result. The range of gmin-gmax gives an indication of variation
+   range of available bandwidth during measurement period.
+
+6. Actual probing rate != desired probing rate.
+
+   When Pathload exits with this message, it means that during at
+   least one fleet, the sender was unable to send a fleet with  the
+   inter-packet spacing that the receiver requested. 
+
+7. Receiver NIC has interrupt coalescence enabled.
+
+   The message implies that NIC at receiver does interrupt coalescence
+   (IC). In brief, effect of interrupt coalescence is to destroy the
+   one way delay in packet stream. pathload tries to detect IC and
+   reports the lower bound on avail-bw. Details about effects of IC on
+   pathload are described in our PAM 2004 paper "Effect of Interrupt
+   Coalescence on Network Measurements".
+
+Authors
+-------
+1. Manish Jain
+   jain@cc.gatech.edu
+2. Constantinos Dovrolis
+   dovrolis@cc.gatech.edu
+
+
+Acknowledgments
+---------------
+This work was supported by the SciDAC program of the US Department 
+of Energy (award # DE-FC02-01ER25467).

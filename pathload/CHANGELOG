@@ -1,0 +1,125 @@
+$Log: CHANGELOG,v $
+Revision 1.17  2006/05/19 19:12:26  jain
+Checking in version 1.3.2. Included bug fixes only
+
+Revision 1.15  2004/04/17 01:01:05  jain
+*** empty log message ***
+
+
+Revision 2004/04/15 - updates since version 1.1.1
+- Modified algorithm to detect interrupt coalescence
+- Algorithm to estimate available bandwidth in presence of interrupt 
+  coalescence.
+
+Revision 2003/12/14 - bug fix since version 1.1.0
+- Modified README.
+- Make new thread detached in pathload receiver. This fixes a bug
+  in older version, where receiver would hang after approx 20 fleet as not 
+  enough memory was available to create a new thread and receiver would exit
+  with a message "Receiver not responding".
+- Fixed a bug in sender that would cause sender running in iterative mode to 
+  exit with "Broken pipe" if receiver was killed.
+- Simplified code to detect interrupt coalescence.
+- Several other minor changes in the code
+
+Revision 1.12 2003/04/09 04:31:13  jain
+Modified the README
+
+
+Revision 2003/04/06 05:16:00
+Added option to have output in netlogger
+format.
+
+Revision 2003/04/04 01:21:22
+implemented function to measure minimum sleep
+time using select.
+
+Revision 2003/04/03 21:06:57
+Estimate gettimeofday() latency on sender since
+some freebsd versions have gettimeofdaylatency equal 
+to 5 usec.
+
+Revision 2003/04/02 01:42:10
+Modified the output mesages on pathload receiver.
+
+Revision 2003/04/01 16:16:12
+Added select so that sender doesnot block and
+now waits a maximum of 50 sec for a control message
+from receiver during a ongoing measurement.
+Also reduced the aggregate threshold from .7 -> to .6.
+
+Revision 2003/03/25 19:42:22
+get_adr() additionally checks for interrupt coallescence.
+
+Revision 2003/03/23 04:29:40
+Modified the command line interface in pathload receiver.
+
+Revision 2003/03/21 01:41:17
+Removed bugs.
+
+Revision 2003/03/19 15:27:36
+Removed bugs.
+
+Revision  2003/03/18 12:33:07  jain
+Thread implementation in place of select.
+select introduces additional latency while 
+is a issue in gigabit path.
+
+Revision 2003/02/09 04:36:47 jain
+Trend detection after each stream
+code working in low bandwidth paths.
+
+Revision 1.10  2002/10/31 18:13:35  jain
+CHANGELOG : testing with $Log: CHANGELOG,v $
+CHANGELOG : testing with Revision 1.17  2006/05/19 19:12:26  jain
+CHANGELOG : testing with Checking in version 1.3.2. Included bug fixes only
+CHANGELOG : testing with
+CHANGELOG : testing with Revision 1.15  2004/04/17 01:01:05  jain
+CHANGELOG : testing with *** empty log message ***
+CHANGELOG : testing with
+CHANGELOG : testing with Revision 1.14  2004/01/14 01:49:32  jain
+CHANGELOG : testing with *** empty log message ***
+CHANGELOG : testing with
+CHANGELOG : testing with Revision 1.13  2003/12/14 08:40:55  jain
+CHANGELOG : testing with 1.1.1-test
+CHANGELOG : testing with
+CHANGELOG : testing with Revision 1.12  2003/04/09 04:31:13  jain
+CHANGELOG : testing with Modified the README
+CHANGELOG : testing with
+CHANGELOG : testing with Revision 1.11  2003/04/09 00:42:35  jain
+CHANGELOG : testing with *** empty log message ***
+CHANGELOG : testing with
+
+Revision 1.9  2002/10/31 17:49:08  jain
+CHANGELOG : modified CHANGELOG
+
+Revision 1.8  2002/10/31 17:47:27  jain
+pathload_rcv_func.c : replaced blocking recvfrom by select.
+pathload_snd_func.c : deley FINISH_STREAM by 200 usec.
+
+10/22/02
+In eliminate_rcvr_side_CS, changed
+<  if ( ( rcvr_time_stamp[i+1] -  rcvr_time_stamp[i]  )  < rcv_latency )
+to
+>  if ( ( rcvr_time_stamp[i+1] -  rcvr_time_stamp[i]  )  <= (1.2 * rcv_latency) )
+
+08/02/2002 - 1.0.3.2
+Added code measure mss on sender and receiver. Also tried some testing on gigabit machines. Geting 100% losses.Dont know why ?
+08/29/2002 - 1.0.3.3
+new modifications : first time from gatech
+08/29/2002 - 1.0.3.3
+new modifications : first time from gatech
+
+09/12/2002 
+Changed min packet size to 300 bytes.
+Changed min time interval to 150 usec.
+
+07/25/02
+Added code in pathload_snd_func to send
+stream at lower rates ( < 1..17 mbps ).
+
+07/25/02
+Made grey_bw_resolution 5% of ADR.
+Earlier it was 1.5 MBPS.
+what if ADR could not be measures ?
+

@@ -1,0 +1,56 @@
+Changes in 1.3.2 (May 2006)
+---------------------------
+* Fixed bug
+* Added -t option to kill pathload_rcv after user specified time
+
+Changes in 1.3.1 (May 2005)
+---------------------------
+* Modified to work in 64bit environment
+  - Thanks to Omid Khalili and Shava Smallen for testing and reporting several
+  bugs in 64bit environment
+* Modified to work without thread library
+* Bug fixes
+  - for-loop in adjust_offset_to_zero( ) should go upto len-1
+  
+Changes in 1.3.0 (Sep 2004)
+---------------------------
+* Initial probing rate, when ADR estimate is 0, is changed from min_rate to 
+  avg of min_rate and max_rate. 
+* Bug fixes
+  - Moved send_latency call after pathload_snd determines max_pkt_sz.
+  This bug resulted in packet size of 0 being used in send_latency function.
+  - min_timer_intr set to zero in the pathload_snd_fns.c::send_fleet() code.  
+  This caused floating point exceptions (when it was zero).
+  - Changed max_pkt_sz to cur_pkt_sz in recv_fleet function. This caused 
+  segmentation fault in certain cases (when trying to free memory).
+  - Modified pathload sender code such that sender exits (or enters wait state
+  for new receiver) if it receives either cur_pkt_sz, time_interval or probe_rate
+  equal to 0.
+  
+
+Changes in 1.2.0 (Apr 2004)
+---------------------------
+* Interrupt coalescence changes
+  Detects IC and uses alternate algorithm (Published in PAM '04).
+
+Changes in 1.1.1 (Jan 2004)
+---------------------------
+* Bug fixes.
+  - Make new thread detached in pathload receiver. This fixes a bug in older
+    version, where receiver would hang after approx 20 fleet as not enough
+    memory was available to create a new thread and receiver would exit with a
+    message "Receiver not responding".
+  - Fixed a bug in sender that would cause sender running in iterative mode to
+    exit with "Broken pipe" if receiver was killed.
+  - Simplified code to detect interrupt coalescence.
+  - Several other minor changes in the code
+
+Changes in 1.1.0 (Apr 2003)
+---------------------------
+* Added option to have output in netlogger format.
+* Implemented function to measure minimum sleep time using select.
+* Added select so that sender doesnot block and now waits a maximum of 50 sec
+  for a control message from receiver during a ongoing measurement.  
+* Reduced the aggregate threshold from .7 -> to .6.
+* Receiver uses different thread for control messages while getting probing
+  packets in main thread. Don't use select anymore.

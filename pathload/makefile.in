@@ -1,0 +1,30 @@
+CC=@PTHREAD_CC@
+
+CFLAGS=@CFLAGS@ @PTHREAD_CFLAGS@ @DEFS@ @THRLIB@
+CPPFLAGS=@CPPFLAGS@
+LIBS=@LIBS@ @PTHREAD_LIBS@
+LDFLAGS=@LDFLAGS@
+
+SOBJS=pathload_snd.o pathload_snd_func.o
+ROBJS=pathload_rcv.o pathload_rcv_func.o 
+OBJS=$(SOBJS) $(ROBJS)
+
+TARGETS=pathload_snd pathload_rcv
+
+all:${TARGETS} clean
+
+pathload_snd: $(SOBJS)
+	 $(CC) $(SOBJS) -o pathload_snd $(LIBS) $(LDFLAGS) $(CFLAGS)
+
+pathload_rcv: $(ROBJS)
+	 $(CC) $(ROBJS) -o pathload_rcv $(LIBS) $(LDFLAGS) $(CFLAGS)
+
+pathload_rcv.o pathload_rcv_func.o: pathload_gbls.h pathload_rcv.h
+
+pathload_snd.o pathload_snd_func.o: pathload_gbls.h pathload_snd.h
+
+clean: 
+	 rm -f ${OBJS} config.cache config.log  config.status
+
+distclean: 
+	 rm -f ${OBJS} ${TARGETS} config.cache config.log makefile config.status
