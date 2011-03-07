@@ -42,3 +42,15 @@ def isNumber(number):
         return True
     except ValueError:
         return False
+        
+def partition(l, n):
+    """
+    l:[_] | n:int -> [[_]]
+    
+    """
+    division = len(l) / float(n)
+    
+    return [
+        l[int(round(division * i)): int(round(division * (i + 1)))]
+        for i in range(n)
+        ]
