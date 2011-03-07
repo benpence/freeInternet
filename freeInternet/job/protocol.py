@@ -3,7 +3,7 @@ import os
 from twisted.protocols import basic
 from twisted.python import log
 
-import common
+import freeInternet.common as common
 
 class JobProtocol(basic.LineReceiver):
     def connectionMade(self):
@@ -70,7 +70,7 @@ class JobProtocol(basic.LineReceiver):
         
         self.file_path = os.path.join(
             self.factory.file_directory,
-            common.random_hash())
+            common.randomHash())
         
         self.file = open(self.file_path, 'wb')
         self.setRawMode()

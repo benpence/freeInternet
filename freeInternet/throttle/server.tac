@@ -4,11 +4,11 @@ sys.path.append("/home/bmp/twistedInternet/")
 from twisted.application import internet, service
 from twisted.python import log
 
-import common
-from throttle_controller import ThrottleServerController
-import throttle_model
+import freeInternet.common as common
+from freeInternet.throttle.controller import ThrottleServerController
+import freeInternet.throttle.model
 
-throttle_model.__init__()
+freeInternet.throttle.model.__init__()
 
 factory = ThrottleServerController()
 factory.update()

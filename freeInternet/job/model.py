@@ -3,11 +3,11 @@ try:
 except ImportError, e:
     from time import strftime
 
-import model
-from throttle_model import Throttle
-import common
+from freeInternet.throttle.model import Throttle
+import freeInternet.common as common
+from freeInternet.common.model import Model
 
-class Assign(model.Model):
+class Assign(Model):
     _keys = {
         'id' :          'INTEGER',
         'instance':     'INTEGER',

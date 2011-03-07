@@ -5,8 +5,8 @@ freeInternet.inspect = function(){
         "Graph"
     ];
     var IMAGES = [
-        "img/inspect.png",
-        "img/graph.png"
+        "css/inspect.png",
+        "css/graph.png"
     ];
         
     var icon = $("#inspect_icon", $(this));

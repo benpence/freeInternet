@@ -1,11 +1,8 @@
-import sys
-sys.path.append("/Users/ben/Source/twisted/")
-
 from twisted.application import internet, service
 from twisted.python import log
 
-import common
-from job_controller import JobClientController
+import freeInternet.common as common
+from freeInternet.job.controller import JobClientController
 
 
 factory = JobClientController()

@@ -1,7 +1,5 @@
 from twisted.protocols import basic
 
-import common
-
 class ThrottleServerProtocol(basic.LineReceiver):
     def connectionMade(self):
         print "Connection"

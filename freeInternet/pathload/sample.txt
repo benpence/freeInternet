@@ -1,0 +1,14 @@
+Receiver savannah.cs.gwu.edu starts measurements at sender 128.164.160.197 on Sun Mar  6 11:31:41 2011 
+Receiving Fleet 0, Rate 95.70Mbps
+Receiving Fleet 1, Rate 190.48Mbps
+Receiving Fleet 2, Rate 143.09Mbps
+Receiving Fleet 3, Rate 119.40Mbps
+Receiving Fleet 4, Rate 107.55Mbps
+Receiving Fleet 5, Rate 101.65Mbps
+Receiving Fleet 6, Rate 98.65Mbps
+Receiving Fleet 7, Rate 97.15Mbps
+
+        *****  RESULT *****
+Available bandwidth range : 95.70 - 97.20 (Mbps)
+Measurements finished at Sun Mar  6 11:31:49 2011 
+Measurement latency is 7.63 sec

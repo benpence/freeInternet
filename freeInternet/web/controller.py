@@ -1,19 +1,19 @@
 import json
 
 from twisted.web.server import Site
-import common
 
-from web_protocol import WebProtocol
-import throttle_model
+import freeInternet.common as common
+from freeInternet.web.protocol import WebProtocol
+import freeInternet.throttle.model
 
 class WebController(Site):
     def __init__(self):
         Site.__init__(self, WebProtocol(self))
     
     def json(self):
-        throttle_model.Throttle.readIntoMemory(common._DATABASE_PATH)
+        freeInternet.throttle.model.Throttle.readIntoMemory(common._DATABASE_PATH)
 
-        clients = throttle_model.Throttle.search()
+        clients = freeInternet.throttle.model.Throttle.search()
 
         credit = {}
         bandwidth = {}

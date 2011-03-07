@@ -208,7 +208,7 @@ freeInternet.Charts = Class.$extend({
         */
         $.ajax({
             //url: "data.json",
-            url: 'test' + (this.count++ % 6) + '.json',
+            url: 'test/test' + (this.count++ % 6) + '.json',
             method: 'GET',
             dataType: 'json',
             success: function (data){ callback(self, data) }

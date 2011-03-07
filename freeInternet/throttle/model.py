@@ -1,7 +1,7 @@
-import common
-import model
+import freeInternet.common as common
+from freeInternet.common.model import Model
 
-class Throttle(model.Model):
+class Throttle(Model):
     _keys = {
         'ip' :          'VARCHAR',
         }

@@ -3,11 +3,11 @@ import commands
 from twisted.internet import protocol
 from twisted.python import log
 
-import common
-from job_protocol import JobServerProtocol, JobClientProtocol
-from job_model import Assign, Job # Specific to server
-from job_client import JobClient # Specific to client
-from verifier import Verifier
+import freeInternet.common as common
+from freeInternet.job.protocol import JobServerProtocol, JobClientProtocol
+from freeInternet.job.model import Assign, Job # Specific to server
+from freeInternet.job.client import JobClient # Specific to client
+from freeInternet.job.verifier import Verifier
 
 
 class JobServerController(protocol.ServerFactory):
@@ -104,7 +104,12 @@ class JobClientController(protocol.ClientFactory):
         if self.gettingJob:
             self.results_path, shell = JobClient.doJob(self.job_path)
             self.gettingJob = not self.gettingJob
-            shell.callStack.addCallback(lambda s: connector.connect())
+            
+            shell.add(
+                "echo",
+                lambda s: connector.connect()
+            )
+            shell.execute()
         else:
             self.gettingJob = not self.gettingJob
             connector.connect()

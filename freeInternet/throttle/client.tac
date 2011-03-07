@@ -1,11 +1,8 @@
-import sys
-sys.path.append("/Users/ben/Source/twisted/")
-
 from twisted.application import internet, service
 from twisted.python import log
 
-import common
-from throttle_controller import ThrottleClientController
+import common as common
+from freeInternet.throttle.controller import ThrottleClientController
 
 factory = ThrottleClientController()
 

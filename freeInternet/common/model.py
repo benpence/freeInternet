@@ -1,7 +1,8 @@
 import commands
-
 from itertools import chain, izip
-import common
+
+import freeInternet.common as common
+import freeInternet.common.db
 
 class Model(object):
     _CLASS_OBJECTS = {
@@ -187,7 +188,7 @@ class Model(object):
         cls._rows = {}
         cls._changes = {}
         
-        with common.db_connection(db_path) as (db, cursor):
+        with common.db.DBConnection(db_path) as (db, cursor):
             cursor.execute("SELECT * FROM %s" % cls.__name__)
 
             def unicodeToStr(value):
@@ -257,7 +258,7 @@ class Model(object):
                         for f in [addQuotes]))
             commands.append(command)
         
-        with common.db_connection(db_path) as (db, cursor):
+        with common.db.DBConnection(db_path) as (db, cursor):
             # Determine column datatypes
             sample = cls.search(1)
             

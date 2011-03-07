@@ -1,8 +1,8 @@
 import math
 from twisted.python import log
 
-import common
-
+import freeInternet.common as common
+import freeInternet.common.shell
 
 class ThrottleApplication(object):    
     @classmethod
@@ -44,7 +44,7 @@ class ThrottleApplication(object):
 
         print "Making allocations"
         
-        shell = common.Shell()
+        shell = common.shell.Shell()
         interface = common._VPN_INTERFACE
         
         toRun = (
@@ -58,27 +58,32 @@ class ThrottleApplication(object):
 
         # Run above commands
         for command in toRun:
-            shell.execute(command)
+            shell.add(command)
 
         # Create node, filter, and /sbin/iptables mark rule for each client
         for i, (ip, allocation) in enumerate(allocations):
             # Create classes off of root qdisc
-            shell.execute("/sbin/tc class add dev %s parent 1: classid 1:%d htb rate %sbps prio %d" % (
+            shell.add("/sbin/tc class add dev %s parent 1: classid 1:%d htb rate %sbps prio %d" % (
                 interface,
                 i + 1,
                 str(allocation * common._BANDWIDTH_HEURISTIC),
-                i + 1))
+                i + 1)
+            )
 
             # Mark traffic 
-            shell.execute("/sbin/iptables -t mangle -A POSTROUTING -d %s -j MARK --set-mark %d" % (
+            shell.add("/sbin/iptables -t mangle -A POSTROUTING -d %s -j MARK --set-mark %d" % (
                 ip,
-                i + 1))
+                i + 1
+                )
+            )
 
             # Filter
-            shell.execute("/sbin/tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
+            shell.add("/sbin/tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
                 interface,
                 i + 1,
                 i + 1,
-                i + 1))
+                i + 1
+                )
+            )
             
-        return shell
+        shell.execute()

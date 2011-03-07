@@ -1,10 +1,10 @@
 from twisted.internet import protocol, reactor
 from twisted.python import log
 
-import common
-from throttle_protocol import ThrottleServerProtocol, ThrottleClientProtocol
-from throttle_application import ThrottleApplication
-from throttle_model import Throttle # Specific to server
+import freeInternet.common as common
+from freeInternet.throttle.protocol import ThrottleServerProtocol, ThrottleClientProtocol
+from freeInternet.throttle.application import ThrottleApplication
+from freeInternet.throttle.model import Throttle # Specific to server
 
 class ThrottleServerController(protocol.ServerFactory):
     protocol = ThrottleServerProtocol

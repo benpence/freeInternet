@@ -1,8 +1,8 @@
 import itertools
 
-import common
-from job_model import Assign, Job
-from throttle_model import Throttle
+import freeInternet.common as common
+from freeInternet.job.model import Assign, Job
+from freeInternet.throttle.model import Throttle
 
 class Verifier(object):
 
@@ -14,7 +14,7 @@ class Verifier(object):
         """
         cls.verifications = {}
         
-        shell = common.Shell()
+        shell = common.shell.Shell()
         
         for assign in Assign.search(verified=""):
             # Don't want incomplete jobs
@@ -31,7 +31,7 @@ class Verifier(object):
         """
     
         print "Verifying %d-%d" % (id, instance)
-        shell = common.Shell()
+        shell = common.shell.Shell()
         shell.execute(
             "md5sum %s" % results_path,
             react_function=lambda md5: cls._storeHash(
