@@ -12,7 +12,7 @@ class JobClient(object):
         
         shell = common.shell.Shell()
         
-        """ADD IN CHECKING?"""
+        """TODO: Add in checking"""
 
         # Decompress job and input data
         shell.add(

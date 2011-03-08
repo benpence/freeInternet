@@ -3,6 +3,7 @@ from itertools import chain, izip
 
 import freeInternet.common as common
 import freeInternet.common.db
+import freeInternet.common.exception as exception
 
 class Model(object):
     _CLASS_OBJECTS = {
@@ -31,8 +32,7 @@ class Model(object):
         
         # Improper row insertion?
         if not self._keys <= columns.keys():
-            """ERROR"""
-            return
+            raise exception.InitializeError("Missing keys in object creation")
         
         # Turn auto-queueing changes off
         self._init = True

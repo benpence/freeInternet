@@ -9,6 +9,10 @@ from freeInternet.throttle.model import Throttle # Specific to server
 class ThrottleServerController(protocol.ServerFactory):
     protocol = ThrottleServerProtocol
 
+    def __init__(self):
+        # Start parallel loop to run pathload and get bandwidth
+        ThrottleApplication.pathloadReceive()
+
     @classmethod
     def update(cls):
         # Get updated values
@@ -38,6 +42,9 @@ class ThrottleServerController(protocol.ServerFactory):
 
 class ThrottleClientController(protocol.ClientFactory):
     protocol = ThrottleClientProtocol
+    
+    def __init__(self):
+        ThrottleApplication.pathloadSend()
     
     def clientConnectionLost(self, connector, reason):
         ThrottleApplication.throttle([(common._IP, self.allocation)])

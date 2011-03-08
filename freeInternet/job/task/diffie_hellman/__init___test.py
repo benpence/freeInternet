@@ -4,7 +4,7 @@ import unittest
 
 import __init__
 
-class TestSequenceFUnctions(unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
     
     def setUp(self):
         self.directory = os.path.dirname(__init__.__file__)

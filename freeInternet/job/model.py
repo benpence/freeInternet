@@ -5,6 +5,7 @@ except ImportError, e:
 
 from freeInternet.throttle.model import Throttle
 import freeInternet.common as common
+import freeInternet.common.exception as exception
 from freeInternet.common.model import Model
 
 class Assign(Model):
@@ -54,8 +55,7 @@ class Assign(Model):
             date_returned="")
         
         if not assign:
-            """ERROR: CALL AUTHORITIES"""
-            return
+            raise exception.EmptyQueryError("No assignment for completed job")
         
         assign.date_returned = strftime("%Y.%m.%d-%H:%M:%S")
         assign.results_path = results_path
@@ -103,7 +103,7 @@ class Assign(Model):
         # More instances of same job
         return Job.search(1, id=max_id), max_assign.instance + 1        
         
-        """TODO: ADD TESTS FOR WHEN THERE ARE NO MORE JOBS TO DO"""
+        """TODO: Add tests for when there are no more jobs to do"""
         
 
 class Job(model.Model):

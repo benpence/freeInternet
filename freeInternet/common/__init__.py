@@ -23,6 +23,8 @@ _IP = "10.8.0.1" # VPN address of server
 _MAX_BANDWIDTH = 4000
 _BANDWIDTH_HEURISTIC = 18
 
+_PATHLOAD_CLIENT = "128.164.160.197"
+
 # Web
 _WEB_PORT = 7777
 
@@ -34,12 +36,14 @@ def randomHash():
     None -> str
     """
     
-    return "%016x" % random.getrandbits(128)
+    return "%x" % random.getrandbits( * 4)
     
 def isNumber(number):
     try:
         float(number)
         return True
+    except TypeError:
+        return False
     except ValueError:
         return False
         

@@ -1,5 +1,7 @@
 from twisted.internet import utils
 
+import exception
+
 class Shell(object):
     def __init__(self, *commands):
         self.commands = commands
@@ -20,6 +22,7 @@ class Shell(object):
             command = self.commands[self.index - 1]
             
             if len(command) is not 2:
+                raise exception.UnexpectedError("Invalid tuple in command list")
                 
             self.commands[self.index - 1][1](data)
 

@@ -30,9 +30,6 @@ class JobProtocol(basic.LineReceiver):
         
         Sends all the binary data of the file
         """
-        
-        """CHECK FOR FILE PROBLEMS"""
-        
         def _readBytesFromFile():
             while True:
                 chunk = self.file.read(common._CHUNK_SIZE)
@@ -44,17 +41,20 @@ class JobProtocol(basic.LineReceiver):
 
         def readFile(file_path):
             self.setRawMode()
-            self.file = open(file_path, 'rb')
-
-            for chunk in _readBytesFromFile():
-                self.transport.write(chunk)
-            self.transport.write("\r\n")
             
-            """DID EVERYTHING GO SMOOTHLY?"""
-
-            self.file.close()
-            self.transport.loseConnection()
-
+            try:
+                self.file = open(file_path, 'rb')
+                
+                for chunk in _readBytesFromFile():
+                    self.transport.write(chunk)
+                self.transport.write("\r\n")
+            except IOError, e:
+                print e
+            finally:
+                if self.file:
+                    self.file.close()
+                    
+                self.transport.loseConnection()
         
         file_path = self.factory.getFile(self.ip)
         readFile(file_path)
@@ -65,8 +65,6 @@ class JobProtocol(basic.LineReceiver):
         
         Sets up protocol to receive a file
         """
-        
-        """CHECK FOR FILE PROBLEMS"""
         
         self.file_path = os.path.join(
             self.factory.file_directory,
@@ -82,8 +80,6 @@ class JobServerProtocol(JobProtocol):
         }
         
     def lineReceived(self, line):
-        """ADD SOME ERROR CHECKING HERE"""
-        
         action = line.strip()
         
         # Valid commands?                        

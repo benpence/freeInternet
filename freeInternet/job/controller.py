@@ -4,10 +4,12 @@ from twisted.internet import protocol
 from twisted.python import log
 
 import freeInternet.common as common
+import freeInternet.common.exception import exception
 from freeInternet.job.protocol import JobServerProtocol, JobClientProtocol
 from freeInternet.job.model import Assign, Job # Specific to server
 from freeInternet.job.client import JobClient # Specific to client
 from freeInternet.job.verifier import Verifier
+
 
 
 class JobServerController(protocol.ServerFactory):
@@ -50,8 +52,7 @@ class JobServerController(protocol.ServerFactory):
             key=lambda x: int("%d%d" % (x.id, x.instance)))
         
         if not assign:
-            """HUGE ERROR EVERYBODY PANIC"""
-            return
+            raise exception.EmptyQueryError("No assignment for completed job")
             
         cls._verifyJob(assign.id, assign.instance, results_path)
         
@@ -65,8 +66,7 @@ class JobServerController(protocol.ServerFactory):
         job = Job.search(1, id=assign.id)
         
         if not job:
-            """OH FUCK OH FUCK OH FUCK"""
-            return
+            raise exception.EmptyQueryError("No job for corresponding assignment (completeJob)")
                 
     doneReceiving = completeJob
        

@@ -1,8 +1,11 @@
 import math
+
 from twisted.python import log
+from twisted.internet import reactor
 
 import freeInternet.common as common
 import freeInternet.common.shell
+import freeInternet.common.exception as exception
 
 class ThrottleApplication(object):    
     @classmethod
@@ -38,7 +41,7 @@ class ThrottleApplication(object):
     @classmethod
     def throttle(cls, allocations):
         """
-        allocations:[(str, int)] -> shell:common.Shell
+        allocations:[(str, int)] -> shell:common.shell.Shell
         
         """
 
@@ -67,7 +70,8 @@ class ThrottleApplication(object):
                 interface,
                 i + 1,
                 str(allocation * common._BANDWIDTH_HEURISTIC),
-                i + 1)
+                i + 1
+                )
             )
 
             # Mark traffic 
@@ -77,7 +81,7 @@ class ThrottleApplication(object):
                 )
             )
 
-            # Filter
+            # Filter traffic
             shell.add("/sbin/tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
                 interface,
                 i + 1,
@@ -87,3 +91,58 @@ class ThrottleApplication(object):
             )
             
         shell.execute()
+
+    @classmethod
+    def pathloadReceive(cls):
+        """
+        None -> None
+        
+        Calls pathload binary to start measuring bandwidth
+        """
+        
+        shell = common.shell.Shell()
+        shell.add(
+            "pathload/pathload_rcv -s %s | awk '/Available/ {print $5,$7}'" % common._PATHLOAD_CLIENT,
+            function=cls.onPathloadReceive
+        )
+        
+        reactor.callLater(
+            common._THROTTLE_SLEEP,
+            shell.execute
+        )
+    
+    @classmethod
+    def onPathloadReceive(cls, data):
+        """
+        data:str -> None
+        
+        Receives bandwidth data in form "float float" and sets max bandwidth
+        Calls receive funciton again
+        """
+        # Acceptable error message:  "Make sure that pathload_snd runs at sender:: Connection refused"
+        if data.startswith("Make"):
+            raise exception.ConnectionError("pathload_rcv: Cannot connect to %s" % common._PATHLOAD_CLIENT)
+
+        else:
+            low, high = data.strip().split()
+            common._MAX_BANDWIDTH = (float(high) + float(low)) / 2
+
+        cls.pathloadReceive()
+
+    @classmethod
+    def pathloadSend(cls):
+        """
+        None -> None
+        
+        Client tests bandwidth with pathload and then adds callback to call itself
+        """
+        shell = common.shell.Shell()
+        shell.add(
+            "pathload/pathload_snd -i",
+            function=lambda data: cls.pathloadSend()
+        )
+        
+        reactor.callLater(
+            common._THROTTLE_SLEEP,
+            shell.execute
+        )
