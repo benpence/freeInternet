@@ -1,39 +1,38 @@
-#!/usr/bin/env python
 
 import sys
 import commands
 import os
 
-def execute(command):
-    return commands.getoutput(command)
+execute = commands.getoutput
 
-def start(module, app):
+def start(slash, dot):
+    
+    
     execute(
-        "twistd -y freeInternet/%s/%s.tac --pidfile=%s_%s.pid --logfile=logs/%s_%s" % (
-            module, app,
-            module, app,
-            module, app
+        "twistd -y %s.tac --pidfile=%s.pid --logfile=logs/%s" % (
+            os.path.join(_ROOT_DIRECTORY, 'freeInternet', slash),
+            dot,
+            dot
         )
     )
     
-    pid = open(module + "_" + app + ".pid", 'r').read().strip()
+    pid = open(dot + ".pid", 'r').read().strip()
     
-    print "%s %s started with pid %s" % (
-        module,
-        app,
+    print "%s started with pid %s" % (
+        dot,
         pid
     )
 
-def start_test(module, app):
+def start_test(slash, dot):
     print execute(
-        "twistd -ny freeInternet/%s/%s.tac --pidfile=%s_%s.pid" % (
-            module, app,
-            module, app,
+        "twistd -ny %s.tac --pidfile=%s.pid" % (
+            os.path.join(_ROOT_DIRECTORY, 'freeInternet', slash),
+            dot
         )
     )
 
-def stop(module, app):
-    pid_file = module + "_" + app + ".pid"
+def stop(slash, dot):
+    pid_file = dot + ".pid"
 
     if not os.path.exists(pid_file):
         return
@@ -41,29 +40,26 @@ def stop(module, app):
     pid = open(pid_file, 'r').read().strip()
     execute("kill " + pid)
     
-    print "%s %s killed with pid %s" % (
-        module,
-        app,
+    print "%s killed with pid %s" % (
+        dot,
         pid
     )
 
-def restart(module, app):
-    stop(module, app)
-    start(module, app)
+def restart(slash, dot):
+    stop(slash, dot)
+    start(slash, dot)
     
-def status(module, app):
-    pid_file = module + "_" + app + ".pid"
+def status(slash, dot):
+    pid_file = dot + ".pid"
     
     if not os.path.exists(pid_file):
-        print "%s %s not running" % (
-            module,
-            app
+        print "%s not running" % (
+            dot
         )
     else:
         pid = open(pid_file).read().strip()
-        print "%s %s running with pid %s" % (
-            module,
-            app,
+        print "%s running with pid %s" % (
+            dot,
             pid
         )
 
@@ -89,7 +85,7 @@ def usage():
     )
     exit(0)
 
-def Main():
+def main():
     # Check length
     if len(sys.argv) is not 4:
         usage()
@@ -114,7 +110,9 @@ def Main():
     sys.path.append('.')
     
     # Perform action
-    actions[sys.argv[3]](module, app)
+    name_slash = '/'.join((module, app))
+    name_dot = '.'.join((module, app))
+    actions[sys.argv[3]](name_slash, name_dot)
     
 if __name__ == "__main__":
-    Main()
+    main()
