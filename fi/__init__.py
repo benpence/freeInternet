@@ -1,3 +1,4 @@
+ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/"
 
 import os
 import subprocess
@@ -54,7 +55,7 @@ def execute(command):
     Execute an 'sh' command and return output from its stdout
     """
     return subprocess.Popen(
-        cmd,
+        command,
         shell=True,
         stdout=subprocess.PIPE
     ).communicate()[0]

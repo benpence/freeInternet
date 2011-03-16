@@ -4,7 +4,10 @@ import exception
 
 class Shell(object):
     def __init__(self, *commands):
-        self.commands = commands
+        self.commands = []
+        
+        for command in commands:
+            self.add(*command)
         
         self.index = 0
     
@@ -13,9 +16,9 @@ class Shell(object):
     
     def add(self, command, function=None):
         if function:
-            self.commands.append((command, self._dummyAction))
-        else:
             self.commands.append((command, function))
+        else:            
+            self.commands.append((command, self._dummyAction))
     
     def execute(self):
         def react(data):
@@ -46,24 +49,3 @@ class Shell(object):
         self.index += 1
 
         d.addCallback(react)
-
-def test():
-    from twisted.internet import reactor
-    
-    def doIt(data):
-        print data
-        
-    shell = Shell(
-        ("echo 'aaa'", doIt),
-        ("echo 'eee'", doIt),
-        ("echo 'iii'", doIt),
-        ("sleep 3", doIt),
-        ("echo 'uuu'", doIt),
-    )
-    
-    shell.execute()
-    
-    reactor.run()
-
-if __name__ == '__main__':
-    test()

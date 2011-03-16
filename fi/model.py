@@ -31,7 +31,7 @@ class Model(object):
             self.__class__._reading = False
         
         # Improper row insertion?
-        if not self._keys <= columns.keys():
+        if not self._keys.keys() <= columns.keys():
             raise exception.InitializeError("Missing keys in object creation")
         
         # Turn auto-queueing changes off
@@ -279,35 +279,3 @@ class Model(object):
                 cursor.execute(command)
                     
         cls._changes = {}
-
-def test():
-    commands.getoutput('rm database.db')
-    
-    class Person(Model):
-        _DATABASE_PATH = 'database.db'
-        _keys = {
-            'first_name'    : 'VARCHAR',
-            'last_name'     : 'VARCHAR',
-            }
-        _values = {
-            'height'        : 'INTEGER',
-            }
-    
-    class Building(Model):
-        _DATABASE_PATH = 'database.db'
-        _keys = {
-            'name'          : 'VARCHAR',
-            }
-        _values = {
-            'height'        : 'INTEGER',
-            }
-    
-    for i in range(100):
-        Person(first_name="Tom%d" % i,
-               last_name="Sawyer%d" % i,
-               height=i)
-    tom = Person.search(1)
-    tom.height = 99
-        
-if __name__ == "__main__":
-    test()

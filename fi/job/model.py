@@ -88,7 +88,7 @@ class Assign(Model):
             assigns,
             key=lambda x: x.id).id
 
-        """# Don't give out multiple instances of same job to same client
+        """TODO: Don't give out multiple instances of same job to same client
         if Assign.search(1, id=max_id, ip=ip):"""
     
         # Get max job_instance

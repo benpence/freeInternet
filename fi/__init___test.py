@@ -57,9 +57,9 @@ class TestSequenceFunctions(unittest.TestCase):
             usage % 'my test program'
         )
         
-    def test_execute(sefl):
+    def test_execute(self):
         self.assertEqual(
-            fi.execute("echo 'eee'")
+            fi.execute("echo 'eee'").strip(),
             'eee'
         )
         

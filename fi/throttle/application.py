@@ -92,6 +92,8 @@ class ThrottleApplication(object):
             
         shell.execute()
 
+    """TODO: Test pathload code"""
+
     @classmethod
     def pathloadReceive(cls):
         """

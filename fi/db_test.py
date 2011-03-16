@@ -1,16 +1,17 @@
 import unittest
+import sqlite3
 
 import fi
 import fi.db
 
 class TestSequenceFunctions(unittest.TestCase):
     
-    def test_DBConnection():
-        
-        with db.DBConnection() as (db, cursor):
-            cursor.execute("SELECT * FROM %s" % cls.__name__)
-    
-    
+    def test_DBConnection(self):
+        with fi.db.DBConnection('test.db') as (db, cursor):
+            self.assertIsInstance(
+                cursor,
+                sqlite3.Cursor
+            )
     
 if __name__ == '__main__':
     unittest.main()

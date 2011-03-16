@@ -4,7 +4,7 @@ import math
 
 import fi
 
-_DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange system with a 128 bit key"
+DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange system with a 128 bit key"
 
 P = 23
 G = 5

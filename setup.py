@@ -20,7 +20,7 @@ def prepend(filename, prefix):
     f.close()
 
 def setPaths():
-    prefix = "_ROOT_DIRECTORY = '%s'\n" % os.getcwd()
+    prefix = "ROOT_DIRECTORY = '%s'\n" % os.getcwd()
     
     for f in ('freeInternet.py', 'freeInternet/__init__.py'):
         prepend(
