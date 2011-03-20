@@ -1,8 +1,8 @@
-import unittest
+from twisted.trial import unittest
 
 import fi.job
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
 
     def test_randomHash(self):
         _hash = fi.job.randomHash()
@@ -34,6 +34,3 @@ class TestSequenceFunctions(unittest.TestCase):
             fi.job.partition(range(1, 11), 10),
             [[i] for i in range(1, 11)]
         )
-        
-if __name__ == '__main__':
-    unittest.main()

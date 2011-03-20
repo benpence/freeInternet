@@ -1,8 +1,8 @@
-import unittest
+from twisted.trial import unittest
 
 import fi
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
             
     def test_isNumber(self):
         self.assertTrue(
@@ -62,6 +62,3 @@ class TestSequenceFunctions(unittest.TestCase):
             fi.execute("echo 'eee'").strip(),
             'eee'
         )
-        
-if __name__ == '__main__':
-    unittest.main()

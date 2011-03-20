@@ -1,12 +1,19 @@
-import unittest
+from twisted.trial import unittest
 
 from twisted.internet import reactor
+from twisted.internet import protocol
+from twisted.test import proto_helpers
 
 import shell
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
     def setUp(self):
-        self.data = ""
+        factory = protocol.ServerFactory()
+        self.protocol = factory.buildProtocol(
+            ('127.0.0.1', 0)
+        )
+        self.tr = proto_helpers.StringTransport()
+        self.protocol.makeConnection(self.tr)
 
         self.messages = (
             "hey",
@@ -19,7 +26,7 @@ class TestSequenceFunctions(unittest.TestCase):
 
     """TODO: Figure out where loop is getting stuck"""
 
-    """def test_init(self):
+    def test_init(self):
         sh = shell.Shell(
             *(
                 (
@@ -79,7 +86,4 @@ class TestSequenceFunctions(unittest.TestCase):
         assertEqual(
             self.data,
             ''.join(self.messages)
-        )"""
-
-if __name__ == '__main__':
-    unittest.main()
+        )

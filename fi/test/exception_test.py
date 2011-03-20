@@ -1,8 +1,8 @@
-import unittest
+from twisted.trial import unittest
 
 import exception
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
     
     exceptions = (
         exception.Error,
@@ -23,6 +23,3 @@ class TestSequenceFunctions(unittest.TestCase):
                 exceptionRaiser,
                 e
             )
-        
-if __name__ == '__main__':
-    unittest.main()

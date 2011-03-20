@@ -1,10 +1,10 @@
 import os
 import commands
-import unittest
+from twisted.trial import unittest
 
 import fi.job.diffie_hellman
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
     
     def setUp(self):
         self.directory = os.path.dirname(fi.job.diffie_hellman.__file__)
@@ -32,6 +32,3 @@ class TestSequenceFunctions(unittest.TestCase):
         
         commands.getoutput("rm %s" % binary_path)
         self.assertTrue(not os.path.exists(binary_path))
-    
-if __name__ == '__main__':
-    unittest.main()

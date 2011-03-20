@@ -1,10 +1,10 @@
-import unittest
+from twisted.trial import unittest
 import sqlite3
 
 import fi
 import fi.db
 
-class TestSequenceFunctions(unittest.TestCase):
+class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
     
     def test_DBConnection(self):
         with fi.db.DBConnection('test.db') as (db, cursor):
@@ -12,6 +12,3 @@ class TestSequenceFunctions(unittest.TestCase):
                 cursor,
                 sqlite3.Cursor
             )
-    
-if __name__ == '__main__':
-    unittest.main()

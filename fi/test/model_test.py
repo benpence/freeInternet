@@ -1,10 +1,10 @@
-import unittest
+from twisted.trial import unittest
 
 import __init__
 import model
 import exception
 
-class TestSequenceFunctions(unittest.TestCase):    
+class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):    
 
     def setUp(self):
         class ModelTest(model.Model):
@@ -123,6 +123,3 @@ class TestSequenceFunctions(unittest.TestCase):
     
     def tearDown(self):
         __init__.execute('rm test.db &> /dev/null')
-        
-if __name__ == '__main__':
-    unittest.main()

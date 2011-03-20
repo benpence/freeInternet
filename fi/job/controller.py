@@ -11,7 +11,6 @@ from fi.job.client import JobClient # Specific to client
 from fi.job.verifier import Verifier
 
 
-
 class JobServerController(protocol.ServerFactory):
     """
     
