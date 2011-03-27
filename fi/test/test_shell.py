@@ -2,17 +2,22 @@ from twisted.trial import unittest
 
 from twisted.internet import reactor
 from twisted.internet import protocol
+from twisted.protocols.basic import LineReceiver
 from twisted.test import proto_helpers
 
-import shell
 
-class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
+from fi import shell
+        
+class TestSequenceFunctions(unittest.TestCase):
     def setUp(self):
         factory = protocol.ServerFactory()
+        factory.protocol = LineReceiver
+        
+        self.tr = proto_helpers.StringTransport()
+        
         self.protocol = factory.buildProtocol(
             ('127.0.0.1', 0)
         )
-        self.tr = proto_helpers.StringTransport()
         self.protocol.makeConnection(self.tr)
 
         self.messages = (
@@ -20,41 +25,38 @@ class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
             "ho",
             "SUPER"
         )
+        self.data = ""
 
     def doIt(self, data):
         self.data += data
 
-    """TODO: Figure out where loop is getting stuck"""
+    def assertion(self, data):
+        assertEqual(
+            self.data,
+            ''.join(self.messages)
+        )
+
+    """TODO: Get this testing properly"""
 
     def test_init(self):
         sh = shell.Shell(
             *(
                 (
-                'echo "%s"' % message,
-                lambda data: self.doIt(data)
+                    'echo "%s"' % message,
+                    lambda data: self.doIt(data)
                 )
             for message in self.messages
             )
         )
         
-        def thingy(data):
-            print "init DONE"
-            reactor.stop()
-        
+        # Make the assertion the last step
         sh.add(
             'echo "e"',
-            function=thingy
+            function=self.assertion
         )
         
-        sh.execute()
-        reactor.run()
-        
-        # After reactor.stop
-        assertEqual(
-            self.data,
-            ''.join(self.messages)
-        )
-        
+        return sh.execute()
+                
     def test_add(self):
         self.messages = (
             "hey",
@@ -70,20 +72,9 @@ class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
                 function=lambda data: self.doIt(data)
             )
 
-        def thingy(data):
-            print "add DONE"
-            reactor.stop()
-
         sh.add(
             'echo',
-            function=thingy
+            function=self.assertion
         )
 
-        sh.execute()
-        reactor.run()
-
-        # After reactor.stop
-        assertEqual(
-            self.data,
-            ''.join(self.messages)
-        )
+        return sh.execute()

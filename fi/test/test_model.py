@@ -1,10 +1,10 @@
 from twisted.trial import unittest
 
-import __init__
-import model
-import exception
+import fi
+from fi import model
+from fi import exception
 
-class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):    
+class TestSequenceFunctions(unittest.TestCase):    
 
     def setUp(self):
         class ModelTest(model.Model):
@@ -98,7 +98,7 @@ class TestSequenceFunctions(from twisted.trial import from twisted.trial import 
         )
             
     def test_database(self):
-        __init__.execute('touch test.db')
+        fi.execute('touch test.db')
         
         self.model(
             first=55,
@@ -122,4 +122,4 @@ class TestSequenceFunctions(from twisted.trial import from twisted.trial import 
         )
     
     def tearDown(self):
-        __init__.execute('rm test.db &> /dev/null')
+        fi.execute('rm test.db &> /dev/null')

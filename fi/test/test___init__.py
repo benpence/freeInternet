@@ -2,7 +2,7 @@ from twisted.trial import unittest
 
 import fi
 
-class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
             
     def test_isNumber(self):
         self.assertTrue(

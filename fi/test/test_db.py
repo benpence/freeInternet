@@ -4,7 +4,7 @@ import sqlite3
 import fi
 import fi.db
 
-class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
     
     def test_DBConnection(self):
         with fi.db.DBConnection('test.db') as (db, cursor):

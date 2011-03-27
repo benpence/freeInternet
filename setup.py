@@ -10,23 +10,28 @@ import fi.throttle.model
 write = sys.stdout.write
 execute = commands.getoutput
 
-def prepend(filename, prefix):
+def _prepend(filename, prefix):
     f = open(filename, 'r')
-    text = prefix + f.read()
+    text = f.read()
     f.close()
-    
-    f = open(filename, 'w')
-    f.write(text)
-    f.close()
+
+    if prefix not in text:
+        text = prefix + text
+        
+        f = open(filename, 'w')
+        f.write(text)
+        f.close()
 
 def setPaths():
     prefix = "ROOT_DIRECTORY = '%s'\n" % os.getcwd()
     
-    for f in ('freeInternet.py', 'freeInternet/__init__.py'):
-        prepend(
+    for f in ('freeInternet.py', 'fi/__init__.py'):
+        _prepend(
             f,
             prefix,
         )
+    
+    fi.ROOT_DIRECTORY = os.getcwd()
 
 def removeDatabase():
     write("Deleting old database...")
@@ -91,11 +96,9 @@ def main():
             removeDatabase,
             createJobDirectory,
             createJobs,
-            createLogsDirectory
         ),
         'client': (
             createJobsDirectory,
-            createLogsDirectory
         )
     }
     actions = ('install', 'uninstall')
@@ -109,8 +112,10 @@ def main():
         print usage()
         exit(1)
     
+    setPaths()
     for func in modules[sys.args[1]]:
-        func()    
+        func()
+    createLogsDirectory
 
 if __name__ == '__main__':
     main()

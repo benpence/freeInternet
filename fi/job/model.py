@@ -4,24 +4,21 @@ try:
 except ImportError, e:
     from time import strftime
 
-import fi.job
-from fi.throttle.model import Throttle
 import fi
+import fi.job
+import fi.model as model
 import fi.exception as exception
-from fi.model import Model
 
-class Assign(Model):
-    _keys = {
-        'id' :          'INTEGER',
-        'instance':     'INTEGER',
-        }
-    _values = {
-        'ip' :          'VARCHAR',
-        'date_issued' : 'VARCHAR',
-        'date_returned':'VARCHAR',
-        'results_path': 'VARCHAR',
-        'verified' :    'VARCHAR',
-        }
+from fi.throttle.model import Throttle
+
+class Assign(model.Model):
+    id              = model.Field(model.Integer, primary_key=True)
+    instance        = model.Field(model.Integer, primary_key=True)
+    ip              = model.Field(model.String)
+    date_issued     = model.Field(model.String)
+    date_returned   = model.Field(model.String)
+    results_path    = model.Field(model.String)
+    verified        = model.Field(model.String)
 
     @classmethod
     def assign(cls, job, job_instance, ip):
@@ -30,9 +27,10 @@ class Assign(Model):
         
         Assign job/job_instance to ip
         """
-        assign = cls.search(
+        assign = cls.query.filter_by(
             id=job.id,
-            instance=job_instance)
+            instance=job_instance
+        ).one()
 
         if assign:
             assign.ip = ip
@@ -42,6 +40,8 @@ class Assign(Model):
                 instance=job_instance,
                 ip=ip,
                 date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
+        
+        model.commit()
 
     @classmethod    
     def complete(cls, ip, results_path):
@@ -51,16 +51,18 @@ class Assign(Model):
         Mark ip's current job complete
         """
         
-        assign = cls.search(
-            1,
+        assign = cls.query.filter_by(
             ip=ip,
-            date_returned="")
+            date_returned=""
+        ).first()
         
         if not assign:
             raise exception.EmptyQueryError("No assignment for completed job")
         
         assign.date_returned = strftime("%Y.%m.%d-%H:%M:%S")
         assign.results_path = results_path
+        
+        model.commit()
 
     @classmethod
     def getNextJob(cls, ip):
@@ -70,7 +72,7 @@ class Assign(Model):
         Finds next sequential job that is not assigned
         """
         
-        assigns = cls.search()
+        assigns = cls.query.all()
         
         # First job assignment?
         if not assigns:
@@ -79,45 +81,48 @@ class Assign(Model):
         # Already assigned something but not completed?
         already_assigned = filter(
             lambda x: x.ip == ip and x.date_returned == "",
-            assigns)
+            assigns
+        )
         if already_assigned:
-            return Job.search(1, id=already_assigned[0].id), already_assigned[0].instance
+            first = already_assigned[0]
+            return Job.query.filter_by(id=first.id).one(), first.instance
         
         # Get max job_id in Assign
         max_id = max(
             assigns,
-            key=lambda x: x.id).id
+            key=lambda x: x.id
+        ).id
 
         """TODO: Don't give out multiple instances of same job to same client
         if Assign.search(1, id=max_id, ip=ip):"""
     
         # Get max job_instance
-        max_assign = max(
+        max_instance = max(
             filter(
                 lambda x: x.id == max_id,
-                assigns),
-            key=lambda x: x.instance)
+                assigns
+            ),
+            key=lambda x: x.instance
+        ).instance
         
         # Enough instances?
-        if max_assign.instance + 1 == fi.job.MAX_INSTANCES:
+        if max_instance + 1 == fi.job.MAX_INSTANCES:
+            # All jobs complete?
+            if max_id + 1 == fi.job.MAX_JOBS:
+                return Job.query.first()(1), 0
+            
+            # More jobs... return next sequential job, instance 0
             return Job.search(1, id=max_id + 1), 0
 
         # More instances of same job
-        return Job.search(1, id=max_id), max_assign.instance + 1        
-        
-        """TODO: Add tests for when there are no more jobs to do"""
-        
+        return Job.search(1, id=max_id), max_instance + 1
 
-class Job(Model):
-    _keys = {
-        'id' :          'INTEGER',
-        }
-    _values = {
-        'credit' :      'INTEGER',
-        'description' : 'VARCHAR',
-        'complete' :    'VARCHAR',
-        'job_path' :    'VARCHAR',
-        }
+class Job(model.Model):
+    id              = model.Field(model.Integer, primary_key=True)
+    credit          = model.Field(model.Integer)
+    description     = model.Field(model.String)
+    complete        = model.Field(model.String)
+    job_path        = model.Field(model.String)
 
 def __setup__(generator, description):
     Assign._changes = Assign._rows = {}
@@ -140,25 +145,3 @@ def __init__():
     Assign.readIntoMemory(fi.DATABASE_PATH)
     Job.readIntoMemory(fi.DATABASE_PATH)
     Throttle.readIntoMemory(fi.DATABASE_PATH)
-
-def test():
-    __init__()
-
-    for i in range(20):
-        job, job_instance = Assign.getNextJob("127.0.0.1")
-        assert isinstance(job, Job)
-        assert isinstance(job_instance, int)
-        #print job
-        for value in map(lambda x: str(x), Assign._rows.values()):
-            print value
-        print
-
-        Assign.assign(job, job_instance, "127.0.0.1")
-        #print Assign._rows[(0, 0)].verified
-
-        Assign.complete("127.0.0.1", "test/TEST/test")
-    
-    
-
-if __name__ == '__main__':
-    test()

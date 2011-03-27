@@ -2,7 +2,7 @@ from twisted.trial import unittest
 
 import fi.job
 
-class TestSequenceFunctions(from twisted.trial import unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
 
     def test_randomHash(self):
         _hash = fi.job.randomHash()

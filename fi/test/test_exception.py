@@ -1,8 +1,8 @@
 from twisted.trial import unittest
 
-import exception
+from fi import exception
 
-class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
     
     exceptions = (
         exception.Error,

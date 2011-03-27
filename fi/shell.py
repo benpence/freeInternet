@@ -49,3 +49,5 @@ class Shell(object):
         self.index += 1
 
         d.addCallback(react)
+        
+        return d

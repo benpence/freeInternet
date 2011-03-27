@@ -11,8 +11,6 @@ class JobClient(object):
         print "Running job"
         
         shell = fi.shell.Shell()
-        
-        """TODO: Add in command-line checking"""
 
         # Decompress job and input data
         shell.add(
@@ -23,11 +21,14 @@ class JobClient(object):
         )
         
         # Run job on input data
-        shell.add('%s/job' % fi.job.JOBS_DIRECTORY)
+        shell.add(
+            'xargs < %s/jobInput > %s/jobOutput %s/job' % tuple(
+                3 * [fi.job.JOBS_DIRECTORY]
+            )
+        )
         
         # Generate results_path for compressed results
-        filename = fi.job.randomHash()
-        results_path = "%s/%s" % (fi.job.JOBS_DIRECTORY, filename)
+        results_path = "%s/%s" % (fi.job.JOBS_DIRECTORY, fi.job.randomHash())
                 
         # Compress results
         shell.add(
@@ -39,8 +40,8 @@ class JobClient(object):
                     
         # Remove unnecessary files
         shell.add(
-            'rm %s/job %s/jobInput %s/jobOutput' % (
-                tuple(3 * [fi.job.JOBS_DIRECTORY])
+            'rm %s/job %s/jobInput %s/jobOutput' % tuple(
+                3 * [fi.job.JOBS_DIRECTORY]
             )
         )
 

@@ -1,3 +1,4 @@
+ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/fi"
 
 import sys
 import commands
@@ -6,8 +7,6 @@ import os
 execute = commands.getoutput
 
 def start(slash, dot):
-    
-    
     execute(
         "twistd -y %s.tac --pidfile=%s.pid --logfile=logs/%s" % (
             os.path.join(_ROOT_DIRECTORY, 'freeInternet', slash),

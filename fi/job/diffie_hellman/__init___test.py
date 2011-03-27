@@ -4,7 +4,7 @@ from twisted.trial import unittest
 
 import fi.job.diffie_hellman
 
-class TestSequenceFunctions(from twisted.trial import from twisted.trial import unittest.TestCase):
+class TestSequenceFunctions(unittest.TestCase):
     
     def setUp(self):
         self.directory = os.path.dirname(fi.job.diffie_hellman.__file__)

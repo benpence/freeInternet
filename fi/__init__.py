@@ -1,4 +1,4 @@
-ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/"
+ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/fi"
 
 import os
 import subprocess
