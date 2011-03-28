@@ -24,7 +24,7 @@ class Shell(object):
         def react(data):
             command = self.commands[self.index - 1]
             
-            if len(command) is not 2:
+            if len(command) != 2:
                 raise exception.UnexpectedError("Invalid tuple in command list")
                 
             self.commands[self.index - 1][1](data)

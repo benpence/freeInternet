@@ -1,15 +1,15 @@
-ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/fi"
-
 import sys
 import commands
 import os
+
+import fi
 
 execute = commands.getoutput
 
 def start(slash, dot):
     execute(
         "twistd -y %s.tac --pidfile=%s.pid --logfile=logs/%s" % (
-            os.path.join(_ROOT_DIRECTORY, 'freeInternet', slash),
+            os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
             dot,
             dot
         )
@@ -25,7 +25,7 @@ def start(slash, dot):
 def start_test(slash, dot):
     print execute(
         "twistd -ny %s.tac --pidfile=%s.pid" % (
-            os.path.join(_ROOT_DIRECTORY, 'freeInternet', slash),
+            os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
             dot
         )
     )
@@ -86,7 +86,7 @@ def usage():
 
 def main():
     # Check length
-    if len(sys.argv) is not 4:
+    if len(sys.argv) != 4:
         usage()
         
     # Check module

@@ -1,15 +1,13 @@
 import os
+import pickle
 try:
     from datetime import strftime
 except ImportError, e:
     from time import strftime
 
-import fi
 import fi.job
 import fi.model as model
 import fi.exception as exception
-
-from fi.throttle.model import Throttle
 
 class Assign(model.Model):
     id              = model.Field(model.Integer, primary_key=True)
@@ -17,31 +15,8 @@ class Assign(model.Model):
     ip              = model.Field(model.String)
     date_issued     = model.Field(model.String)
     date_returned   = model.Field(model.String)
-    results_path    = model.Field(model.String)
+    output          = model.Field(model.String)
     verified        = model.Field(model.String)
-
-    @classmethod
-    def assign(cls, job, job_instance, ip):
-        """
-        job:Job | job_instance:int | ip:str -> None
-        
-        Assign job/job_instance to ip
-        """
-        assign = cls.query.filter_by(
-            id=job.id,
-            instance=job_instance
-        ).one()
-
-        if assign:
-            assign.ip = ip
-            assign.date_issued=strftime("%Y.%m.%d-%H:%M:%S")
-        else:
-            cls(id=job.id,
-                instance=job_instance,
-                ip=ip,
-                date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
-        
-        model.commit()
 
     @classmethod    
     def complete(cls, ip, results_path):
@@ -51,10 +26,10 @@ class Assign(model.Model):
         Mark ip's current job complete
         """
         
-        assign = cls.query.filter_by(
+        assign = cls.query.get_by(
             ip=ip,
             date_returned=""
-        ).first()
+        )
         
         if not assign:
             raise exception.EmptyQueryError("No assignment for completed job")
@@ -65,31 +40,64 @@ class Assign(model.Model):
         model.commit()
 
     @classmethod
+    def lookup(cls, ip):
+        """
+        ip:str -> Assign
+                
+        Lookup up ip's latest assignment
+        """
+        return = max(
+            cls.qyery.filter_by(ip=ip).all(),
+            key=lambda x: int("%d%d" % (x.id, x.instance))
+        )
+
+    @classmethod
     def getNextJob(cls, ip):
         """
-        ip:str -> job:Job | job_instance:int
+        ip:str -> None
         
         Finds next sequential job that is not assigned
+        Assign it to ip
         """
+        q = cls.query
         
-        assigns = cls.query.all()
+        def assign(job, instance):
+            # More instances of same job
+            assign = q.get_by(
+                id=job.id,
+                instance=instance
+            )
+
+            if assign:
+                assign.ip = ip
+                assign.date_issued=strftime("%Y.%m.%d-%H:%M:%S")
+            else:
+                cls(id=job.id,
+                    instance=job_instance,
+                    ip=ip,
+                    date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
+            model.commit()
+            
+            return pickle.loads(job.input) # in (job_name, (input_arg, ..)) format
         
         # First job assignment?
-        if not assigns:
-            return Job.search(1, id=0), 0
+        if not q.all():
+            return assign(Job.query.get_by(id=0), 0)
         
         # Already assigned something but not completed?
-        already_assigned = filter(
-            lambda x: x.ip == ip and x.date_returned == "",
-            assigns
+        already_assigned = q.get_by(
+            ip=ip,
+            date_returned="",
         )
+        
+        job_q = Job.query
+        
         if already_assigned:
-            first = already_assigned[0]
-            return Job.query.filter_by(id=first.id).one(), first.instance
+            job = job_q.get_by(id=first.id), first.instance
         
         # Get max job_id in Assign
         max_id = max(
-            assigns,
+            assing_q.all(),
             key=lambda x: x.id
         ).id
 
@@ -98,10 +106,7 @@ class Assign(model.Model):
     
         # Get max job_instance
         max_instance = max(
-            filter(
-                lambda x: x.id == max_id,
-                assigns
-            ),
+            q.filter_by(id=max_id).all(),
             key=lambda x: x.instance
         ).instance
         
@@ -109,39 +114,31 @@ class Assign(model.Model):
         if max_instance + 1 == fi.job.MAX_INSTANCES:
             # All jobs complete?
             if max_id + 1 == fi.job.MAX_JOBS:
-                return Job.query.first()(1), 0
+                return assign(job_q.first().name, 0)
             
             # More jobs... return next sequential job, instance 0
-            return Job.search(1, id=max_id + 1), 0
-
-        # More instances of same job
-        return Job.search(1, id=max_id), max_instance + 1
+            return assign(job_q.get_by(id=max_id + 1), 0)
 
 class Job(model.Model):
     id              = model.Field(model.Integer, primary_key=True)
-    credit          = model.Field(model.Integer)
+    input           = model.Field(model.String)
     description     = model.Field(model.String)
-    complete        = model.Field(model.String)
-    job_path        = model.Field(model.String)
+    credit          = model.Field(model.Integer)
 
-def __setup__(generator, description):
-    Assign._changes = Assign._rows = {}
-    Assign.writeToDatabase(fi.DATABASE_PATH)
-    
-    task_module = __import__(
-        '.'.join(fi.job.TASK_DIRECTORY + [fi.job.TASK])
-    )
-    binary_path = os.pat h.join(fi.job.TASK_DIRECTORY)
-        
-    for i in task_module.input(fi.job.MAX_JOBS, ):
+def setup():
+    import fi.job.task
+    task = fi.job.task.__getattribute(TASK)__
+
+    for i, job_input in enumerate(task.input()):
         Job(id=i,
-            credit=5,
-            description="TEST TEST TEST",
-            job_path=fi.job.JOBS_DIRECTORY+'/'+str(i)
+            input=pickle.dumps(job_input),
+            description=task.DESCRIPTION,
+            credit=task.CREDIT
         )
-    Job.writeToDatabase(fi.DATABASE_PATH)
 
-def __init__():    
-    Assign.readIntoMemory(fi.DATABASE_PATH)
-    Job.readIntoMemory(fi.DATABASE_PATH)
-    Throttle.readIntoMemory(fi.DATABASE_PATH)
+        sys.out.write("%d " % i)
+        sys.stdout.flush()
+
+    model.commit()
+
+model.mapTables()

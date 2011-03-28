@@ -5,7 +5,6 @@ import fi
 import fi.job
 from fi.job.controller import JobClientController
 
-
 factory = JobClientController()
 
 application = service.Application("FreeInternet Job Client", uid=1, gid=1)

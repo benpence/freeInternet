@@ -1,15 +1,11 @@
 import fi
-from fi.model import Model
+import fi.model as model
 
-class Throttle(Model):
-    _keys = {
-        'ip' :          'VARCHAR',
-        }
-    _values = {
-        'vpn_ip' :      'VARCHAR',
-        'credit' :      'INTEGER',
-        'bandwidth':    'INTEGER',
-        }
+class Throttle(model.Model):
+    ip              = model.Field(model.String, primary_key=True)
+    vpn_ip          = model.Field(model.String, primary_key=True)
+    credit          = model.Field(model.Integer)
+    bandwidth       = model.Field(model.Integer)
     
     @classmethod
     def allocate(cls, allocations):
@@ -19,37 +15,26 @@ class Throttle(Model):
         
         ipsToBandwidth = dict(allocations)
         
-        for throttle in Throttle.search():
+        for throttle in cls.query.all():
             throttle.bandwidth = ipsToBandwidth[throttle.vpn_ip]
-        
-def __init__():
-    Throttle.readIntoMemory(fi.DATABASE_PATH)
+
+        model.commit()        
     
-def __setup__():
+def setup():
     Throttle(
         ip="128.164.160.197",
         vpn_ip="10.8.0.6",
-        credit=10,
+        credit=1,
         bandwidth=10
-        )
+    )
+    
     Throttle(
         ip="128.164.160.199",
         vpn_ip="10.8.0.10",
-        credit=10,
+        credit=1,
         bandwidth=10
-        )
-    Throttle.writeToDatabase(fi.DATABASE_PATH)
-
-def test():
-    Throttle.readIntoMemory(fi.DATABASE_PATH)
-    throttle = Throttle.search(1)
-
-    print throttle
-    throttle.credit += 5
-    print throttle
-
-    Throttle.writeToDatabase(fi.DATABASE_PATH)
-
-
-if __name__ == "__main__":
-    test()
+    )
+    
+    model.commit()
+    
+model.mapTables()

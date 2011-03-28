@@ -1,5 +1,3 @@
-ROOT_DIRECTORY = "/Users/ben/Source/freeInternet/fi"
-
 import os
 import subprocess
 
@@ -39,7 +37,7 @@ def invalidArgs(args, rules):
     
     usage = lambda: makeUsage(args, rules)
     
-    if len(args) is not len(rules) + 1:
+    if len(args) != len(rules) + 1:
         return usage
     
     for i, rule in enumerate(rules):
@@ -59,3 +57,12 @@ def execute(command):
         shell=True,
         stdout=subprocess.PIPE
     ).communicate()[0]
+
+def chain(*args):
+    for arg in args:
+        try:
+            lst = iter(arg)
+            for item in lst:
+                yield item
+        except TypeError, e:
+            yield arg

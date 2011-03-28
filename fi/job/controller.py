@@ -1,141 +1,83 @@
 import commands
 
-from twisted.internet import protocol
 from twisted.python import log
+from twisted.spread import pb
 
 import fi.exception as exception
-import fi.job
-from fi.job.protocol import JobServerProtocol, JobClientProtocol
-from fi.job.model import Assign, Job # Specific to server
-from fi.job.client import JobClient # Specific to client
+# Server
+import fi.job.model
+from fi.job.model import Assign, Job
 from fi.job.verifier import Verifier
 
-
-class JobServerController(protocol.ServerFactory):
-    """
-    
-    """
-    protocol = JobServerProtocol
-    file_directory = fi.job.JOBS_DIRECTORY
-    
-    @classmethod
-    def assign(cls, ip):
+class JobServerController(pb.Root):
+    def remote_getJob(self, ip):
         """
-        ip:str -> job_path:str
+        ip:str -> RemoteJob
         
         Returns the path to the next job
         """
         
-        job, job_instance = Assign.getNextJob(ip)
-        Assign.assign(job, job_instance, ip)
-        
-        log.msg("Assigning job %d-%d" % (
+        job_name, job_input = Assign.getNextJob(ip)
+                
+        log.msg("Assigning job %d to %s" % (
             job.id,
-            job_instance))
+            ip
+        ))
         
-        return job.job_path
-    getFile = assign
+        return job_name, job_input
     
-    @classmethod
-    def completeJob(cls, ip, results_path):
+    def remote_returnJob(self, ip, output):
         """
-        ip:str | results_path:str -> None
+        ip:str | output:str -> None
         
         Verifies job that client is returning
         Marks completion in database
         """
         
         # Get relevant assignment
-        assign = max(
-            Assign.search(ip=ip),
-            key=lambda x: int("%d%d" % (x.id, x.instance)))
-        
+        assign = Assign.lookup(ip)
+    
         if not assign:
             raise exception.EmptyQueryError("No assignment for completed job")
-            
-        cls._verifyJob(assign.id, assign.instance, results_path)
-        
-        Assign.complete(ip, results_path)
-        
+
         log.msg("Completing %d-%d" % (
             assign.id,
             assign.instance))
         
-        # Get relevant job
-        job = Job.search(1, id=assign.id)
+        assign.complete(output)
+      
+        Verifier.verify(assign, output)
         
-        if not job:
-            raise exception.EmptyQueryError("No job for corresponding assignment (completeJob)")
-                
-    doneReceiving = completeJob
-       
-    @classmethod
-    def _verifyJob(cls, job_id, job_instance, results_path):
-        """
-        job_id:int | job_instance:int | results_path:str -> boolean
-        
-        Return whether or not this job_id has been verified
-        """
-        
-        Verifier.verify(job_id, job_instance, results_path)
-
-class JobClientController(protocol.ClientFactory):
-    """
-    
-    """
-    protocol = JobClientProtocol
-    file_directory = fi.job.JOBS_DIRECTORY
-    
-    def __init__(self):
-        self.gettingJob = True
-        
+class JobClientController(pb.PBClientFactory):
     def clientConnectionMade(self):
-        if self.gettingJob:
-            print "Getting new job"
-            self.action = "SEND"
+        self.getJob()
+        
+    def getJob(self):
+        def doJob():    
+            job_def = self.tasker.callRemote("getJob", self.ip)
+            job_def.addCallback(self.gotJob)
             
-        else:
-            print "Sending results"
-            self.action = "RECEIVE"
-    
-    def clientConnectionLost(self, connector, reason):
-        # Do job if in gettingJob mode
-        if self.gettingJob:
-            self.results_path, shell = JobClient.doJob(self.job_path)
-            self.gettingJob = not self.gettingJob
+        def gotTasker(tasker):
+            self.tasker = tasker
+            doJob()
             
-            shell.add(
-                "echo",
-                lambda s: connector.connect()
-            )
-            shell.execute()
+        if self.tasker:
+            doJob()
         else:
-            self.gettingJob = not self.gettingJob
-            connector.connect()
-
-    def gotJob(self, ip, job_path):
+            tasker_def = factory.getRootObject()
+            tasker_def.addCallback(gotTasker)
+            
+    def gotJob(self, job_name, job_input):
         """
-        ip:str | job_path:str -> None
+        job_name:Str | job_input:(_) -> None
         
         Called after job as been transferred
         """
-                
-        self.job_path = job_path
-    doneReceiving = gotJob
-    
-    def getResultsPath(self, ip):
-        """
-        ip:str -> results_path:str
-
-        Called to get the results_path to transfer
-        """
         
-        return self.results_path
-    getFile = getResultsPath
-
+        task = __import__('fi.job.task').__getAttribute__(job_name)
         
-def test():
-    pass
-
-if __name__ == '__main__':
-    test()
+        complete = self.tasker.callRemote(
+            "returnJob",
+            task.getOutput(*job_input)
+        )
+        complete.addCallback(self.getJob)

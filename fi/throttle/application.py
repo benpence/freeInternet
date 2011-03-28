@@ -4,7 +4,7 @@ from twisted.python import log
 from twisted.internet import reactor
 
 import fi.throttle
-import fi.shell
+import fi.throttle.shell
 import fi.exception as exception
 
 class ThrottleApplication(object):    
@@ -47,7 +47,7 @@ class ThrottleApplication(object):
 
         print "Making allocations"
         
-        shell = fi.shell.Shell()
+        shell = fi.throttle.shell.Shell()
         interface = fi.throttle.VPN_INTERFACE
         
         toRun = (
@@ -102,7 +102,7 @@ class ThrottleApplication(object):
         Calls pathload binary to start measuring bandwidth
         """
         
-        shell = fi.shell.Shell()
+        shell = fi.throttle.shell.Shell()
         shell.add(
             "pathload/pathload_rcv -s %s | awk '/Available/ {print $5,$7}'" % fi.throttle.PATHLOAD_CLIENT,
             function=cls.onPathloadReceive
@@ -138,7 +138,7 @@ class ThrottleApplication(object):
         
         Client tests bandwidth with pathload and then adds callback to call itself
         """
-        shell = fi.shell.Shell()
+        shell = fi.throttle.shell.Shell()
         shell.add(
             "pathload/pathload_snd -i",
             function=lambda data: cls.pathloadSend()

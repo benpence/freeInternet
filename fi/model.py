@@ -21,7 +21,11 @@ Integer = elixir.Integer
 String = elixir.String
 DateTime = elixir.DateTime
 
-def commit():
+def mapTables():
     elixir.setup_all()
+
+def createDatabaseTables():
     elixir.create_all()
+
+def commit():
     elixir.session.commit()

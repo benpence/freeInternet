@@ -1,6 +1,3 @@
-import sys
-sys.path.append("/home/bmp/twistedInternet/")
-
 from twisted.application import internet, service
 from twisted.python import log
 

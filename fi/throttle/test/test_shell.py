@@ -5,8 +5,7 @@ from twisted.internet import protocol
 from twisted.protocols.basic import LineReceiver
 from twisted.test import proto_helpers
 
-
-from fi import shell
+from fi.throttle import shell
         
 class TestSequenceFunctions(unittest.TestCase):
     def setUp(self):

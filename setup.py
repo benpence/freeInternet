@@ -1,110 +1,102 @@
 import commands
 import sys
 import os
+import itertools
 
 import fi
+fi.ROOT_DIRECTORY = os.getcwd()
 import fi.job
+import fi.model
 import fi.job.model
 import fi.throttle.model
 
-write = sys.stdout.write
-execute = commands.getoutput
+def _prepend(filename, prefix, action):
+    # Read
+    with open(filename, 'r') as f:
+        text = f.read()
 
-def _prepend(filename, prefix):
-    f = open(filename, 'r')
-    text = f.read()
-    f.close()
+    added = prefix in text
 
-    if prefix not in text:
+    if action == 'install':
+        if added:
+            return
+
         text = prefix + text
-        
-        f = open(filename, 'w')
+   
+    else:
+        if not added:
+            return
+    
+        text = text.replace(prefix, '')
+    
+    # Write if necessary
+    with open(filename, 'w') as f:
         f.write(text)
-        f.close()
 
-def setPaths():
-    prefix = "ROOT_DIRECTORY = '%s'\n" % os.getcwd()
+def doPaths(action):
+    # Add path so process can find fi package
+    print "Setting application paths..."
+    SCRIPTS = (
+        'fi/job/client.py',
+        'fi/job/server.py',
+        'fi/throttle/client.py',
+        'fi/throttle/server.py',
+        'fi/web/server.py',
+        'freeInternet.py',
+    )
+
+    prefix = "import sys\nsys.path.append('%s')\n" % fi.ROOT_DIRECTORY
     
-    for f in ('freeInternet.py', 'fi/__init__.py'):
+    for filename in SCRIPTS:
         _prepend(
-            f,
+            filename,
             prefix,
+            action
         )
     
-    fi.ROOT_DIRECTORY = os.getcwd()
-
-def removeDatabase():
-    write("Deleting old database...")
-    execute("rm -f %s" % fi.DATABASE_PATH)
-    print "done."
-
-    write("Creating tables...")
-    fi.throttle.model.__setup__(
-        fi.job.TASK_DIRECTORY
+    print "Setting directory for database..."
+    _prepend(
+        'fi/__init__.py',
+        'ROOT_DIRECTORY = "%s"\n' % fi.ROOT_DIRECTORY,
+        action
     )
-    fi.job.model.__setup__()
-    print "done."
 
-def createJobDirectory():
-    write("Replacing file directories... ")
+def doDatabase(action):
+    if os.exists(fi.DATABASE_PATH):
+        print "Deleting old database..."
+        fi.execute("rm -f " + fi.DATABASE_PATH)
     
-    execute("rm -rf %s" % fi.job.JOBS_DIRECTORY)
-    execute("mkdir %s" %  fi.job.JOBS_DIRECTORY)
-    print "done."
-
-def createJobs():
-    task_directory = os.path.join(fi.ROOT_DIRECTORY, *fi.job.TASK_DIRECTORY)
-    task_path = os.path.join(task_directory, "job")
-    task_input = os.path.join(task_directory, "jobInput")
-
-    print "Creating jobs:"
-    task_module = __import__(
-        '.'.join(fi.job.TASK_DIRECTORY + [fi.job.TASK])
-    )
+    # Install    
+    if action == 'install':
+        print "Creating tables..."
     
-    for i, job_input in enumerate(task_module.input(fi.job.MAX_JOBS, task_path)):
-        write("%d " % i)
-        sys.stdout.flush()
+        fi.model.createDatabaseTables()
+        fi.job.model.setup()
+        fi.throttle.model.setup()
+
+def doLogs(action):
+    if os.exists('logs'):
+        print "Deleting logs directory..."
+        fi.execute('rm -rf logs')
         
-        with open(os.path.join(task_directory, fi.job.TASK), 'w') as file:
-            file.write(job_input)
-    
-        # Archive current job
-        execute("tar czvf %d %s %s > /dev/null" % (
-            i,
-            task_input,
-            "%.c" % task_path
-            )
-        )
-        
-        # Move it to jobs directory
-        execute("mv %d %s" % (
-            i,
-            fi.job.JOBS_DIRECTORY))
-    
-    execute("rm -f jobInput job")
-    print
-
-def createLogsDirectory():
-    write("Creating logs directory...")
-    execute("mkdir logs")
-    print "done."
+    if action == 'install':
+        print "Creating logs directory..."
+        fi.execute("mkdir logs")
 
 def main():
     modules = {
         'server': (
-            removeDatabase,
-            createJobDirectory,
-            createJobs,
+            doDatabase,
         ),
-        'client': (
-            createJobsDirectory,
-        )
+        'client': (),
     }
-    actions = ('install', 'uninstall')
+    actions = (
+        'install',
+        'uninstall',
+    )
     
     usage = fi.invalidArguments(
-        sys.args,
+        sys.argv,
         (modules, actions)
     )
     
@@ -112,10 +104,8 @@ def main():
         print usage()
         exit(1)
     
-    setPaths()
-    for func in modules[sys.args[1]]:
-        func()
-    createLogsDirectory
+    for func in fi.chain(doPaths, modules[argv[1]], doLogs):
+        func(argv[2])
 
 if __name__ == '__main__':
     main()
