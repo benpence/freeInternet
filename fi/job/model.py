@@ -1,5 +1,4 @@
 import os
-import pickle
 try:
     from datetime import strftime
 except ImportError, e:
@@ -15,7 +14,7 @@ class Assign(model.Model):
     ip              = model.Field(model.String)
     date_issued     = model.Field(model.String)
     date_returned   = model.Field(model.String)
-    output          = model.Field(model.String)
+    output          = model.Field(model.PickleType)
     verified        = model.Field(model.String)
 
     @classmethod    
@@ -25,8 +24,7 @@ class Assign(model.Model):
         
         Mark ip's current job complete
         """
-        
-        assign = cls.query.get_by(
+        assign = cls.get_by(
             ip=ip,
             date_returned=""
         )
@@ -46,8 +44,8 @@ class Assign(model.Model):
                 
         Lookup up ip's latest assignment
         """
-        return = max(
-            cls.qyery.filter_by(ip=ip).all(),
+        return max(
+            cls.query.filter_by(ip=ip).all(),
             key=lambda x: int("%d%d" % (x.id, x.instance))
         )
 
@@ -60,10 +58,10 @@ class Assign(model.Model):
         Assign it to ip
         """
         q = cls.query
-        
-        def assign(job, instance):
+
+        def record(job, instance):
             # More instances of same job
-            assign = q.get_by(
+            assign = cls.get_by(
                 id=job.id,
                 instance=instance
             )
@@ -73,31 +71,29 @@ class Assign(model.Model):
                 assign.date_issued=strftime("%Y.%m.%d-%H:%M:%S")
             else:
                 cls(id=job.id,
-                    instance=job_instance,
+                    instance=instance,
                     ip=ip,
                     date_issued=strftime("%Y.%m.%d-%H:%M:%S"))
             model.commit()
             
-            return pickle.loads(job.input) # in (job_name, (input_arg, ..)) format
+            return job # in (job_name, (input_arg, ..)) format
         
         # First job assignment?
         if not q.all():
-            return assign(Job.query.get_by(id=0), 0)
+            return record(Job.get_by(id=0), 0)
         
         # Already assigned something but not completed?
-        already_assigned = q.get_by(
+        already_assigned = cls.get_by(
             ip=ip,
             date_returned="",
         )
         
-        job_q = Job.query
-        
         if already_assigned:
-            job = job_q.get_by(id=first.id), first.instance
+            job = Job.get_by(id=first.id), first.instance
         
         # Get max job_id in Assign
         max_id = max(
-            assing_q.all(),
+            q.all(),
             key=lambda x: x.id
         ).id
 
@@ -114,31 +110,30 @@ class Assign(model.Model):
         if max_instance + 1 == fi.job.MAX_INSTANCES:
             # All jobs complete?
             if max_id + 1 == fi.job.MAX_JOBS:
-                return assign(job_q.first().name, 0)
+                return record(Job.query.first().name, 0)
             
             # More jobs... return next sequential job, instance 0
-            return assign(job_q.get_by(id=max_id + 1), 0)
+            return record(Job.get_by(id=max_id + 1), 0)
 
 class Job(model.Model):
     id              = model.Field(model.Integer, primary_key=True)
-    input           = model.Field(model.String)
+    input           = model.Field(model.PickleType)
     description     = model.Field(model.String)
     credit          = model.Field(model.Integer)
 
-def setup():
-    import fi.job.task
-    task = fi.job.task.__getattribute(TASK)__
+def nameToJob(task_name):
+    return __import__('fi.job.task.' + task_name).job.task.__getattribute__(task_name).__getattribute__(task_name)
 
-    for i, job_input in enumerate(task.input()):
+def setup():
+    task = nameToJob(fi.job.TASK)
+
+    for i, job_input in enumerate(task.input(fi.job.MAX_JOBS)):
         Job(id=i,
-            input=pickle.dumps(job_input),
+            input=job_input,
             description=task.DESCRIPTION,
             credit=task.CREDIT
         )
-
-        sys.out.write("%d " % i)
-        sys.stdout.flush()
-
+        
     model.commit()
-
+    
 model.mapTables()

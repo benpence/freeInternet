@@ -34,18 +34,6 @@ class TestSequenceFunctions(unittest.TestCase):
                 )
             )
 
-        """TODO: Figure out why __init__'s exception is not being caught"""
-        """self.assertRaises(
-            exception.InitializeError,
-            self.model
-        )
-        
-        self.assertRaises(
-            exception.InitializeError,
-            self.model,
-            first=55
-        )"""
-        
         instance = self.model(
             first=55,
             second='hello world'

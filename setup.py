@@ -2,6 +2,8 @@ import commands
 import sys
 import os
 import itertools
+import warnings
+warnings.filterwarnings("ignore")
 
 import fi
 fi.ROOT_DIRECTORY = os.getcwd()
@@ -37,11 +39,11 @@ def doPaths(action):
     # Add path so process can find fi package
     print "Setting application paths..."
     SCRIPTS = (
-        'fi/job/client.py',
-        'fi/job/server.py',
-        'fi/throttle/client.py',
-        'fi/throttle/server.py',
-        'fi/web/server.py',
+        'fi/job/client.tac',
+        'fi/job/server.tac',
+        'fi/throttle/client.tac',
+        'fi/throttle/server.tac',
+        'fi/web/server.tac',
         'freeInternet.py',
     )
 
@@ -62,7 +64,7 @@ def doPaths(action):
     )
 
 def doDatabase(action):
-    if os.exists(fi.DATABASE_PATH):
+    if os.path.exists(fi.DATABASE_PATH):
         print "Deleting old database..."
         fi.execute("rm -f " + fi.DATABASE_PATH)
     
@@ -75,7 +77,7 @@ def doDatabase(action):
         fi.throttle.model.setup()
 
 def doLogs(action):
-    if os.exists('logs'):
+    if os.path.exists('logs'):
         print "Deleting logs directory..."
         fi.execute('rm -rf logs')
         
@@ -95,7 +97,7 @@ def main():
         'uninstall',
     )
     
-    usage = fi.invalidArguments(
+    usage = fi.invalidArgs(
         sys.argv,
         (modules, actions)
     )
@@ -104,8 +106,8 @@ def main():
         print usage()
         exit(1)
     
-    for func in fi.chain(doPaths, modules[argv[1]], doLogs):
-        func(argv[2])
+    for func in fi.chain(doPaths, modules[sys.argv[1]], doLogs):
+        func(sys.argv[2])
 
 if __name__ == '__main__':
     main()

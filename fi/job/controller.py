@@ -3,10 +3,10 @@ import commands
 from twisted.python import log
 from twisted.spread import pb
 
+
 import fi.exception as exception
 # Server
-import fi.job.model
-from fi.job.model import Assign, Job
+import fi.job.model as model
 from fi.job.verifier import Verifier
 
 class JobServerController(pb.Root):
@@ -17,9 +17,10 @@ class JobServerController(pb.Root):
         Returns the path to the next job
         """
         
-        job_name, job_input = Assign.getNextJob(ip)
+        job = model.Assign.getNextJob(ip)
+        job_name, job_input = job.input
                 
-        log.msg("Assigning job %d to %s" % (
+        log.msg("Assigning %d to %s" % (
             job.id,
             ip
         ))
@@ -35,7 +36,7 @@ class JobServerController(pb.Root):
         """
         
         # Get relevant assignment
-        assign = Assign.lookup(ip)
+        assign = model.Assign.lookup(ip)
     
         if not assign:
             raise exception.EmptyQueryError("No assignment for completed job")
@@ -49,32 +50,47 @@ class JobServerController(pb.Root):
         Verifier.verify(assign, output)
         
 class JobClientController(pb.PBClientFactory):
-    def clientConnectionMade(self):
+    tasker = None
+
+    def clientConnectionMade(self, connector):
+        pb.PBClientFactory.clientConnectionMade(self, connector)
+        
+        print "Connection"
+        self.ip = connector.transport.getPeer().host
         self.getJob()
         
     def getJob(self):
-        def doJob():    
+        def gotNothing(reason):
+            raise exception.ConnectionError("Remote call failed: " + reason)
+            
+        def transferJob():  
+            print "transferJob"  
             job_def = self.tasker.callRemote("getJob", self.ip)
-            job_def.addCallback(self.gotJob)
+            job_def.addCallbacks(self.gotJob, gotNothing)
             
         def gotTasker(tasker):
+            print "gotTasker"
+            print tasker
             self.tasker = tasker
-            doJob()
-            
+            transferJob()
+        
         if self.tasker:
-            doJob()
+            print "already have tasker"
+            transferJob()
         else:
-            tasker_def = factory.getRootObject()
-            tasker_def.addCallback(gotTasker)
+            print "getTasker"
+            tasker_def = self.getRootObject()
+            tasker_def.addCallbacks(gotTasker, gotNothing)
             
-    def gotJob(self, job_name, job_input):
+    def gotJob(self, input):
         """
         job_name:Str | job_input:(_) -> None
         
         Called after job as been transferred
         """
+        job_name, job_input = input
         
-        task = __import__('fi.job.task').__getAttribute__(job_name)
+        task = model.nameToJob(job_name)
         
         complete = self.tasker.callRemote(
             "returnJob",

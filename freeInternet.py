@@ -1,13 +1,13 @@
 import sys
+sys.path.append('/media/home/Source/freeInternet')
+import sys
 import commands
 import os
 
 import fi
 
-execute = commands.getoutput
-
 def start(slash, dot):
-    execute(
+    fi.execute(
         "twistd -y %s.tac --pidfile=%s.pid --logfile=logs/%s" % (
             os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
             dot,
@@ -23,7 +23,7 @@ def start(slash, dot):
     )
 
 def start_test(slash, dot):
-    print execute(
+    print fi.execute(
         "twistd -ny %s.tac --pidfile=%s.pid" % (
             os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
             dot
@@ -37,7 +37,7 @@ def stop(slash, dot):
         return
         
     pid = open(pid_file, 'r').read().strip()
-    execute("kill " + pid)
+    fi.execute("kill " + pid)
     
     print "%s killed with pid %s" % (
         dot,

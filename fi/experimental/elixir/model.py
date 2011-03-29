@@ -13,6 +13,22 @@ String = elixir.String
 DateTime = elixir.DateTime
 
 def commit():
-    elixir.setup_all()
-    elixir.create_all()
     elixir.session.commit()
+    
+class Job(Model):
+    name = Field(String, primary_key=True)
+    description = Field(String)
+
+    def __repr__(self):
+        return "<Job('%s','%s')>" % (self.name, self.description)
+
+class Style(Model):
+    name = Field(String, primary_key=True)
+    description = Field(String)
+
+    def __repr__(self):
+        return "<Job('%s','%s')>" % (self.name, self.description)
+
+elixir.setup_all()
+
+print Job.query.all()

@@ -1,4 +1,3 @@
-import fi
 import fi.model as model
 
 class Throttle(model.Model):
@@ -36,5 +35,5 @@ def setup():
     )
     
     model.commit()
-    
+
 model.mapTables()

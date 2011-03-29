@@ -1,9 +1,9 @@
 import itertools
 import random
 
-from fi.job.task import RemoteJob
+from fi.job import Job
 
-class DiffieHellman(RemoteJob):
+class DiffieHellman(Job):
     # About Task
     DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange"
     CREDIT = 5
@@ -16,7 +16,7 @@ class DiffieHellman(RemoteJob):
     # Globals
     primes = []
     
-    def remote_getOutput(self, p, g, Ay, By, start, stop):
+    def getOutput(self, p, g, Ay, By, start, stop):
         # Try all stop->stop private keys
         Ax = start
         while self.squareAndMultiply(g, Ax, p) != Ay and Ax <= stop + 1:
@@ -31,10 +31,8 @@ class DiffieHellman(RemoteJob):
 
     @classmethod
     def generateInput(cls):
-        while True:
-            # prime, primitive-root pair
-            prime, root = generator.next()
-
+        # prime, primitive-root pair
+        for prime, root in cls.generateRoots():
             # Calculate public keys
             Ay = cls.squareAndMultiply(
                 root,

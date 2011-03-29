@@ -1,14 +1,14 @@
+ROOT_DIRECTORY = "/media/home/Source/freeInternet"
 import os
 import subprocess
 
-# Model
-CHANGES_BEFORE_WRITE = 3 # How many rows changed until write to database
-DATABASE_PATH = os.path.join(ROOT_DIRECTORY, "freeInternet.db")
+# CONFIG
+HOST = "127.0.0.1" # Server IP
+try:
+    DATABASE_PATH = os.path.join(ROOT_DIRECTORY, "freeInternet.db")
+except NameError, e:
+    DATABASE_PATH = os.path.join(os.path.abspath('../'), "freeInternet.db")
 
-# Server IP
-HOST = "127.0.0.1"
-# How many bytes to transfer per send/rcv
-CHUNK_SIZE = 512
 
 def isNumber(number):
     try:

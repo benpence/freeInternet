@@ -9,7 +9,6 @@ class TestSequenceFunctions(unittest.TestCase):
         exception.UnexpectedError,
         exception.EmptyQuery,
         exception.ConnectionError,
-        exception.InitializeError
     )
     
     def test_exceptions(self):

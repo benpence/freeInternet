@@ -13,6 +13,3 @@ class EmptyQuery(UnexpectedError):
         
 class ConnectionError(Error):
     pass
-
-class InitializeError(Error):
-    pass
