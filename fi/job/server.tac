@@ -6,7 +6,6 @@ from twisted.spread import pb
 
 from fi.job.controller import JobServerController
 import fi.job
-import fi.job.verifier
 
 factory = pb.PBServerFactory(JobServerController())
 

@@ -1,6 +1,7 @@
 import elixir
+import random
 
-elixir.metadata.bind = "sqlite:///test.db"
+elixir.metadata.bind = "sqlite:///:memory:"
 
 elixir.options_defaults['shortnames'] = True
 
@@ -15,20 +16,29 @@ DateTime = elixir.DateTime
 def commit():
     elixir.session.commit()
     
-class Job(Model):
-    name = Field(String, primary_key=True)
-    description = Field(String)
+class Todd(Model):
+    thing = Field(Integer, primary_key=True)
+    second_thing = Field(Integer, primary_key=True)
+    elixir.using_options(order_by=('thing', 'second_thing'))
 
     def __repr__(self):
-        return "<Job('%s','%s')>" % (self.name, self.description)
-
-class Style(Model):
-    name = Field(String, primary_key=True)
-    description = Field(String)
-
-    def __repr__(self):
-        return "<Job('%s','%s')>" % (self.name, self.description)
+        return "<Todd(%d)>" % self.thing
 
 elixir.setup_all()
+elixir.create_all()
 
-print Job.query.all()
+first = range(10)
+random.shuffle(first)
+second = range(10)
+random.shuffle(second)
+for i in first:
+    for j in second:
+        Todd(
+            thing=i,
+            second_thing=j
+        )
+
+elixir.session.commit()
+
+for todd in Todd.query.all():
+    print todd.thing, todd.second_thing

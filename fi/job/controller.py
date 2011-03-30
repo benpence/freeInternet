@@ -1,14 +1,17 @@
 import commands
 import sys
 
+# Client
+import imp
+import time
+
 from twisted.python import log
 from twisted.spread import pb
-
 
 import fi.exception as exception
 # Server
 import fi.job.model as model
-from fi.job.verifier import Verifier
+import fi.job.verifier
 
 class JobServerController(pb.Root):
     def remote_getJob(self, ip):
@@ -20,13 +23,14 @@ class JobServerController(pb.Root):
         assignment = model.Assignment.getNextJob(ip)
         model.Assignment.record(ip, assignment)
                         
-        log.msg("Assignmenting %d-%d to %s" % (
+        log.msg("Assigning %d-%d-%d to %s" % (
             assignment.job.id,
             assignment.instance.id,
-            ip
+            assignment.id,
+            ip,
         ))
         
-        return assignment.job.module, assignment.instance.input
+        return assignment.job.name, assignment.job.module, assignment.instance.input
     
     def remote_returnJob(self, ip, output):
         """
@@ -38,15 +42,16 @@ class JobServerController(pb.Root):
         # Get relevant assignment
         assignment = model.Assignment.lookup(ip)
 
-        assign.complete(output)
+        model.Assignment.complete(ip, output)
         
-        log.msg("Completed %d-%d for %s" % (
+        log.msg("Completed %d-%d-%d for %s" % (
             assignment.job.id,
             assignment.instance.id,
+            assignment.id,
             ip,
         ))
       
-        Verifier.verify(assign, output)
+        fi.job.verifier.Verifier.verify(assignment)
         
 class JobClientController(pb.PBClientFactory):
     tasker = None
@@ -54,32 +59,36 @@ class JobClientController(pb.PBClientFactory):
     def clientConnectionMade(self, connector):
         pb.PBClientFactory.clientConnectionMade(self, connector)
         
-        print "Connection"
+        print "Connected to server"
         self.ip = connector.transport.getPeer().host
         self.getJob()
+
+    def clientConnectionLost(self, *args):
+        self.clientConnectionFailed(*args)
+
+    def clientConnectionFailed(self, connector, reason):
+        print "Connection failed"
+        time.sleep(2)
+        print "Reconnecting..."
+        connector.connect()
+        #raise exception.ConnectionError("Remote call failed: " + reason)
         
-    def getJob(self):
-        def gotNothing(reason):
-            raise exception.ConnectionError("Remote call failed: " + reason)
-            
+    def gotNothing(self, reason):
+        print "Remote call failed: " + str(reason)
+        
+    def getJob(self, *args):
         def transferJob():  
-            print "transferJob"  
+            print "Receiving Job"  
             job_def = self.tasker.callRemote("getJob", self.ip)
-            job_def.addCallbacks(self.gotJob, gotNothing)
+            job_def.addCallbacks(self.gotJob, self.gotNothing)
             
         def gotTasker(tasker):
-            print "gotTasker"
-            print tasker
             self.tasker = tasker
             transferJob()
-        
-        if self.tasker:
-            print "already have tasker"
-            transferJob()
-        else:
-            print "getTasker"
-            tasker_def = self.getRootObject()
-            tasker_def.addCallbacks(gotTasker, gotNothing)
+
+        print "Receiving remote scheduler"
+        tasker_def = self.getRootObject()
+        tasker_def.addCallbacks(gotTasker, self.gotNothing)
             
     def gotJob(self, job):
         """
@@ -87,23 +96,23 @@ class JobClientController(pb.PBClientFactory):
         
         Called after job as been transferred
         """
-        
         # Unpack
         name, module_input, job_input = job
+        print "Running %s on %s" % (name, job_input)
         
         module = self.stringToModule(module_input, name)
         
         complete = self.tasker.callRemote(
             "returnJob",
-            module.__getattribute__(name).getOutput(*job_input)
+            self.ip,
+            module.__getattribute__(name).getOutput(*job_input),
         )
-        complete.addCallback(self.getJob)
-    
-    
-    import imp
+        
+        print "Returning job output"
+        complete.addCallbacks(self.getJob, self.gotNothing)
     
     @classmethod
-    def stringToModule(code, name):
+    def stringToModule(cls, code, name):
         """Credit: code.activestate.com/recipes/82234-importing-a-dynamically-generated-module/"""
         if name in sys.modules:
             return sys.modules[name]

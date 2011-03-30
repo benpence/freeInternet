@@ -13,12 +13,20 @@ class Job(model.Model):
     description     = model.Field(model.String)
     module          = model.Field(model.String, deferred=True)
     credit          = model.Field(model.Integer)
+    model.using_options(order_by='id')
+    
+    def __repr__(self):
+        return "<Job(%d,'%s')>" % (self.id, self.name)
 
 class Instance(model.Model):
     job             = model.ManyToOne('Job', primary_key=True)
     id              = model.Field(model.Integer, primary_key=True, autoincrement=True)
     input           = model.Field(model.PickleType)
     digest          = model.Field(model.Integer)
+    model.using_options(order_by=('job_id', 'id'))
+    
+    def __repr__(self):
+        return "<Instance(%d, %d)>" % (self.job.id, self.id)
 
 class Assignment(model.Model):
     job             = model.ManyToOne('Job', primary_key=True)
@@ -29,16 +37,16 @@ class Assignment(model.Model):
     date_returned   = model.Field(model.DateTime)
     output          = model.Field(model.PickleType)
     verified        = model.Field(model.String)
+    model.using_options(order_by=('job_id', 'instance_id', 'id'))
+    
+    def __repr__(self):
+        return "<Assignment(%d, %d, %d)>" % (self.job.id, self.instance.id, self.id)
     
     old_generator = None
     
     def reset(self):
         self.client = self.date_issued = self.date_returned = self.output = None
         
-    @classmethod
-    def asc(cls):
-        return cls.query.order_by(model.asc(cls.job))
-
     @classmethod
     def lookup(cls, ip):
         """
@@ -72,7 +80,7 @@ class Assignment(model.Model):
         Mark ip's current job complete
         """
         assignment = cls.lookup(ip)
-
+        
         if not assignment:
             raise exception.EmptyQueryError("No assignment for completed job")
 
@@ -93,9 +101,9 @@ class Assignment(model.Model):
         already_assigned = cls.lookup(ip)
 
         if already_assigned:
-            job = Job.get_by(id=first.id)
-            
-        next_job = cls.asc().filter_by(date_issued=None).first()
+            return already_assigned
+        
+        next_job = cls.get_by(date_issued=None)
 
         # All complete? -> Erase last one and give it off
         if not next_job:
@@ -124,11 +132,9 @@ def nameToInput(task_name):
 
 def setup():
     prefix = os.path.join('fi', 'job', 'remote')
+    files = (f for f in os.listdir(prefix) if f.endswith('.py') and f != '__init__.py')
     
-    for i, filename in enumerate(os.listdir(prefix)):
-        if not filename.endswith('.py') or filename == '__init__.py':
-            continue
-        
+    for i, filename in enumerate(files):
         # Add job
         name = filename.replace('.py', '')
         input_class = nameToInput(name)

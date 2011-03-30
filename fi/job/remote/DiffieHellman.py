@@ -4,12 +4,11 @@ import random
 import itertools
 
 class DiffieHellman(fi.job.remote.RemoteJob):
-
     @classmethod
-    def getOutput(self, p, g, Ay, By, start, stop):
+    def getOutput(cls, p, g, Ay, By, start, stop):
         # Try all stop->stop private keys
         Ax = start
-        while self.squareAndMultiply(g, Ax, p) != Ay and Ax <= stop + 1:
+        while cls.squareAndMultiply(g, Ax, p) != Ay and Ax <= stop + 1:
             Ax += 1;
             
         # Not in range?
@@ -17,7 +16,7 @@ class DiffieHellman(fi.job.remote.RemoteJob):
             return "Private key not in range"
         
         # Report shared key
-        return "Shared key %d" % self.squareAndMultiply(By, Ax, p)
+        return "Shared key %d" % cls.squareAndMultiply(By, Ax, p)
     
     @classmethod
     def squareAndMultiply(cls, base, power, modulus):

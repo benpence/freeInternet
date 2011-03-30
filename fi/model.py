@@ -9,6 +9,7 @@ elixir.metadata.bind = "sqlite:///%s" % fi.DATABASE_PATH
 
 # Global options
 elixir.options_defaults['shortnames'] = True
+using_options = elixir.using_options
 
 # Model
 Model = elixir.Entity

@@ -12,7 +12,7 @@ class RemoteJobInput(object):
         generator = cls.generateInput()
 
         for i in range(MAX_JOBS):
-            yield cls.__name__, generator.next()
+            yield generator.next()
             
     @classmethod
     def generateInput(cls):

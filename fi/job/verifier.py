@@ -18,12 +18,12 @@ class Verifier(object):
         """
         for instance in Instance.query.all():
             if instance.digest:
-                cls.done[(instance.job.id, instance.id)] = instance.digest
+                cls.done[(instance.job, instance)] = instance.digest
         
         for assignment in Assignment.query.filter_by(verified=None).all():
             # Needs to be verified?
             if assignment.date_returned:
-                cls._verify(assignment)
+                cls.verify(assignment)
                 
     
     @classmethod
@@ -31,7 +31,7 @@ class Verifier(object):
         """
         assign:Assignment -> None
         """
-        key = (assignment.job.id, assignment.instance.id)
+        key = (assignment.job, assignment.instance)
         
         # A repeat -> compare verified hash to new hash
         if key in cls.done:
@@ -40,7 +40,7 @@ class Verifier(object):
             ]
         
         # Create new list or append?
-        cls.digests.setDefault(key, []).append(assignment)
+        cls.digests.setdefault(key, []).append(assignment)
 
         # Time to verify all?
         if len(cls.digests[key]) == fi.job.MAX_ASSIGNMENTS:
@@ -57,14 +57,14 @@ class Verifier(object):
         Yes -> "Correct" to majority, "Incorrect for rest"
         No  -> "Inconclusive" for all
         """
-        print "Verifying %d-%d" % key
+        print "Verifying %d-%d" % tuple(map(lambda x: x.id, key))
         
         assignments = cls.digests[key]
         votes = {}
         
         for assignment in assignments:
             o = hash(assignment.output)
-            votes[o] = votes.setDefault(o, []).append(assignment)
+            votes.setdefault(o, []).append(assignment)
         
         majority_digest = max(votes, key=lambda o: len(votes[o]))
         
@@ -83,6 +83,7 @@ class Verifier(object):
         else:
             # Cache correct result hash
             cls.done[key] = majority_digest
+            key[1].digest = majority_digest
             
             for ass in assignments:
                 correct = hash(ass.output) == majority_digest
