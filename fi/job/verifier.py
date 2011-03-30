@@ -3,126 +3,97 @@ import hashlib
 
 import fi.job
 import fi.model as model
-from fi.job.model import Assign, Job
-from fi.throttle.model import Throttle
+from fi.job.model import Assignment, Instance, Job
 
 class Verifier(object):
+    digests = {} # Waiting to be verified
+    done = {} # For repeats
+    
+    messages = ('Incorrect', 'Correct')
+    
     @classmethod
     def init(cls):
         """
         None -> None
-        
         """
-        cls.verifications = {}
+        for instance in Instance.query.all():
+            if instance.digest:
+                cls.done[(instance.job.id, instance.id)] = instance.digest
         
-        for assign in Assign.query.filter_by(verified="").all():
-            # Don't want incomplete jobs
-            if assign.date_returned != "":
-                cls.verify(assign)
+        for assignment in Assignment.query.filter_by(verified=None).all():
+            # Needs to be verified?
+            if assignment.date_returned:
+                cls._verify(assignment)
+                
     
     @classmethod
-    def verify(cls, assign):
+    def verify(cls, assignment):
         """
-        assign:Assign -> None
+        assign:Assignment -> None
+        """
+        key = (assignment.job.id, assignment.instance.id)
         
-        """
-    
-        print "Verifying %d-%d" % (id, instance)
+        # A repeat -> compare verified hash to new hash
+        if key in cls.done:
+            assignment.verified = cls.messages[
+                hash(assignment.output) == assignment.instance.digest
+            ]
         
-        m = hashlib.md5()        
-        m.update(assign.output)
-        cls._storeHash(assign, m.digest())
-    
-    @classmethod
-    def _storeHash(cls, assign, digest):
-        """
-        assign:Assign | digest:str -> None
-        
-        """
+        # Create new list or append?
+        cls.digests.setDefault(key, []).append(assignment)
 
-        if assign.id not in cls.verifications:
-            cls.verifications[assign.id] = (
-                assign.instance,
-                digest
-            )
-        else:
-            cls.verifications[assign.id].append((
-                assign.instance,
-                digest
-            ))
-        
-        # Time to validate?
-        if len(cls.verifications[assign.id]) == fi.job.MAX_INSTANCES:
-            cls._verifyResults(assign.id)
-    
+        # Time to verify all?
+        if len(cls.digests[key]) == fi.job.MAX_ASSIGNMENTS:
+            cls._verifyResults(key)
+
     @classmethod
-    def _verifyResults(cls, id):
+    def _verifyResults(cls, key):
         """
         id:int -> None
         
         Called when all job instances have been completed.
         
         Is a hash is favored over the others?
-        Yes -> "Passed" to majority, "Failed for rest"
+        Yes -> "Correct" to majority, "Incorrect for rest"
         No  -> "Inconclusive" for all
         """
+        print "Verifying %d-%d" % key
         
-        results = cls.verifications[id]
-        digests = {}
+        assignments = cls.digests[key]
+        votes = {}
         
-        for (instance, digest) in results:
-            if digest not in digests:
-                digests[digest] = [instance]
-            else:
-                digests[digest].append(instance)
-                 
-        majority_digest = max(
-            digests.values(),
-            key=lambda x : len(x))
+        for assignment in assignments:
+            o = hash(assignment.output)
+            votes[o] = votes.setDefault(o, []).append(assignment)
         
-        # False majority? = other > majority
+        majority_digest = max(votes, key=lambda o: len(votes[o]))
+        
+        # False majority? other >= majority
         false_majority = len(
             filter(
-                lambda x: x != majority_digest and len(x) >= len(majority_digest),
-                digests.values()
+                lambda x: x != majority_digest and len(votes[x]) >= len(votes[majority_digest]),
+                votes
             )
         )
-        
-        if not false_majority:
-            # Majority md5 pass
-            cls._setVerified([majority_digest], id, "Passed")
-            
-            # All others fail
-            cls._setVerified(
-                (ids
-                 for ids in digests.values()
-                 if ids != majority_digest
-                ),
-                id,
-                "Failed"
-            )
-            
-        else:
-            # More than one 'max' -> inconclusive
-            cls._setVerified(digests.values(), "Inconclusive")
 
-        del cls.verifications[id]
-        model.commit()
-    
-    @classmethod        
-    def _setVerified(cls, digests, id, conclusion):
-        """
-        digests:[[int]] | id:int | conclusion:str -> None
-        
-        """
-        for instance in itertools.chain(*digests):
-            assign = Assign.query.filter_by(id=id, instance=instance).one()
-            assign.verified = conclusion
+        # Set verified status
+        if false_majority:
+            for ass in assignments:
+                ass.reset()
+        else:
+            # Cache correct result hash
+            cls.done[key] = majority_digest
             
-            if conclusion == "Passed":
-                credit = Job.query.filter_by(id=id).one().credit
+            for ass in assignments:
+                correct = hash(ass.output) == majority_digest
+            
+                ass.verified = cls.messages[correct]
                 
-                client = Throttle.query.filter_by(ip=assign.ip).one()
-                client.credit += credit
+                if correct:
+                    assignment.client.credit += assignment.job.credit
+
+        del cls.digests[key]
+
+        model.commit()
 
 Verifier.init()

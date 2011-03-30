@@ -9,7 +9,6 @@ try:
 except NameError, e:
     DATABASE_PATH = os.path.join(os.path.abspath('../'), "freeInternet.db")
 
-
 def isNumber(number):
     try:
         float(number)

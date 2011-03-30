@@ -14,12 +14,12 @@ elixir.options_defaults['shortnames'] = True
 Model = elixir.Entity
 Field = elixir.Field
 
-
 # Datatypes for models
 Integer = elixir.Integer
 String = elixir.String
 DateTime = elixir.DateTime
 PickleType = elixir.PickleType
+ManyToOne = elixir.ManyToOne
 
 def mapTables():
     elixir.setup_all()

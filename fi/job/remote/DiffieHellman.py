@@ -1,21 +1,11 @@
-import itertools
+import fi.job.remote
+
 import random
+import itertools
 
-from fi.job import Job
+class DiffieHellman(fi.job.remote.RemoteJob):
 
-class DiffieHellman(Job):
-    # About Task
-    DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange"
-    CREDIT = 5
-    
-    # Constants
-    MIN_PRIME = 2 # First prime is 2. DON'T CHANGE THIS
-    MIN_MOD = 2000 # Start giving moduli at this number and above
-    INPUT_RANGE = 1000 # How many numbers to check in brute force
-
-    # Globals
-    primes = []
-    
+    @classmethod
     def getOutput(self, p, g, Ay, By, start, stop):
         # Try all stop->stop private keys
         Ax = start
@@ -28,35 +18,7 @@ class DiffieHellman(Job):
         
         # Report shared key
         return "Shared key %d" % self.squareAndMultiply(By, Ax, p)
-
-    @classmethod
-    def generateInput(cls):
-        # prime, primitive-root pair
-        for prime, root in cls.generateRoots():
-            # Calculate public keys
-            Ay = cls.squareAndMultiply(
-                root,
-                random.randint(1, prime - 1),
-                prime
-            )
-            By = cls.squareAndMultiply(
-                root,
-                random.randint(1, prime - 1),
-                prime
-            )
-
-            # Split up input
-            start = stop = 1
-            while start < prime:
-                stop = start + cls.INPUT_RANGE
-                
-                if stop >= prime:
-                    stop = prime - 1
-                
-                yield (prime, root, Ay, By, start, stop)
-                
-                start += cls.INPUT_RANGE + 1
-
+    
     @classmethod
     def squareAndMultiply(cls, base, power, modulus):
         """
@@ -78,6 +40,47 @@ class DiffieHellman(Job):
                 output = (output * output) % modulus
 
         return output
+
+class DiffieHellmanInput(fi.job.remote.RemoteJobInput):
+    # About Task
+    DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange"
+    CREDIT = 20
+    
+    # Constants
+    MIN_PRIME = 2 # First prime is 2. DON'T CHANGE THIS
+    MIN_MOD = 2000 # Start giving moduli at this number and above
+    INPUT_RANGE = 1000 # How many numbers to check in brute force
+
+    # Globals
+    primes = []
+        
+    @classmethod
+    def generateInput(cls):
+        # prime, primitive-root pair
+        for prime, root in cls.generateRoots():
+            # Calculate public keys
+            Ay = DiffieHellman.squareAndMultiply(
+                root,
+                random.randint(1, prime - 1),
+                prime
+            )
+            By = DiffieHellman.squareAndMultiply(
+                root,
+                random.randint(1, prime - 1),
+                prime
+            )
+
+            # Split up input
+            start = stop = 1
+            while start < prime:
+                stop = start + cls.INPUT_RANGE
+                
+                if stop >= prime:
+                    stop = prime - 1
+                
+                yield (prime, root, Ay, By, start, stop)
+                
+                start += cls.INPUT_RANGE + 1
         
     @classmethod
     def generateRoots(cls):
@@ -125,7 +128,7 @@ class DiffieHellman(Job):
         Verifies that 'order' of root % mod is mod - 1 by checking all prime factor periods (root^(p-1)/prime % mod == 1)
         """
         for factor in factors:
-            if cls.squareAndMultiply(root, (mod - 1) / factor, mod) == 1:
+            if DiffieHellman.squareAndMultiply(root, (mod - 1) / factor, mod) == 1:
                 return False
 
         return True

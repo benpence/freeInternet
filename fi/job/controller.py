@@ -1,4 +1,5 @@
 import commands
+import sys
 
 from twisted.python import log
 from twisted.spread import pb
@@ -16,16 +17,16 @@ class JobServerController(pb.Root):
         
         Returns the path to the next job
         """
-        
-        job = model.Assign.getNextJob(ip)
-        job_name, job_input = job.input
-                
-        log.msg("Assigning %d to %s" % (
-            job.id,
+        assignment = model.Assignment.getNextJob(ip)
+        model.Assignment.record(ip, assignment)
+                        
+        log.msg("Assignmenting %d-%d to %s" % (
+            assignment.job.id,
+            assignment.instance.id,
             ip
         ))
         
-        return job_name, job_input
+        return assignment.job.module, assignment.instance.input
     
     def remote_returnJob(self, ip, output):
         """
@@ -34,18 +35,16 @@ class JobServerController(pb.Root):
         Verifies job that client is returning
         Marks completion in database
         """
-        
         # Get relevant assignment
-        assign = model.Assign.lookup(ip)
-    
-        if not assign:
-            raise exception.EmptyQueryError("No assignment for completed job")
+        assignment = model.Assignment.lookup(ip)
 
-        log.msg("Completing %d-%d" % (
-            assign.id,
-            assign.instance))
-        
         assign.complete(output)
+        
+        log.msg("Completed %d-%d for %s" % (
+            assignment.job.id,
+            assignment.instance.id,
+            ip,
+        ))
       
         Verifier.verify(assign, output)
         
@@ -82,18 +81,36 @@ class JobClientController(pb.PBClientFactory):
             tasker_def = self.getRootObject()
             tasker_def.addCallbacks(gotTasker, gotNothing)
             
-    def gotJob(self, input):
+    def gotJob(self, job):
         """
         job_name:Str | job_input:(_) -> None
         
         Called after job as been transferred
         """
-        job_name, job_input = input
         
-        task = model.nameToJob(job_name)
+        # Unpack
+        name, module_input, job_input = job
+        
+        module = self.stringToModule(module_input, name)
         
         complete = self.tasker.callRemote(
             "returnJob",
-            task.getOutput(*job_input)
+            module.__getattribute__(name).getOutput(*job_input)
         )
         complete.addCallback(self.getJob)
+    
+    
+    import imp
+    
+    @classmethod
+    def stringToModule(code, name):
+        """Credit: code.activestate.com/recipes/82234-importing-a-dynamically-generated-module/"""
+        if name in sys.modules:
+            return sys.modules[name]
+
+        module = imp.new_module(name)
+
+        exec code in module.__dict__
+        sys.modules[name] = module
+
+        return module
