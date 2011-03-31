@@ -40,5 +40,5 @@ for i in first:
 
 elixir.session.commit()
 
-for todd in Todd.query.all():
+for todd in Todd.query.filter(Todd.thing != 5):
     print todd.thing, todd.second_thing

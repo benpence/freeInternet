@@ -91,7 +91,7 @@ class Verifier(object):
                 ass.verified = cls.messages[correct]
                 
                 if correct:
-                    assignment.client.credit += assignment.job.credit
+                    ass.client.credit += ass.job.credit
 
         del cls.digests[key]
 

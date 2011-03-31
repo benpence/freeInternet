@@ -1,13 +1,16 @@
+import os
+
 from twisted.web.resource import Resource
 from twisted.web.static import File
 
 class JSONProtocol(Resource):
-    def __init__(self, service):
+    def __init__(self, service, name):
         Resource.__init__(self)
         self.service = service
+        self.name = name
             
     def render_GET(self, request):
-        return self.service.json()
+        return self.service.json(request, self.name)
 
 class WebProtocol(Resource):
     def __init__(self, service):
@@ -17,6 +20,8 @@ class WebProtocol(Resource):
     def getChild(self, name, request):
         # JSON request
         if(name.endswith('.json')):
-            return JSONProtocol(self.service)
+            return JSONProtocol(self.service, name)
+            
+        # Static file serving
         else:
-            return File('web/').getChild(name, request)
+            return File(os.path.join('fi', 'web')).getChild(name, request)

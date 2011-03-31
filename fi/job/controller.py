@@ -9,10 +9,15 @@ from twisted.python import log
 from twisted.spread import pb
 
 import fi.exception as exception
-# Server
-import fi.job.model as model
-import fi.job.verifier
 
+
+# Server
+try:
+    import fi.job.model as model
+    import fi.job.verifier
+except exception.OperationalError, e:
+    pass
+    
 class JobServerController(pb.Root):
     def remote_getJob(self, ip):
         """

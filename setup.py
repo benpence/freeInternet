@@ -34,6 +34,25 @@ def _prepend(filename, prefix, action):
     # Write if necessary
     with open(filename, 'w') as f:
         f.write(text)
+        
+def doPathload(action):
+    print "Setting up pathload..."
+    
+    BINARIES = (
+        "fi/throttle/pathload/pathload_rcv",
+        "fi/throttle/pathload/pathload_snd",
+    )
+    
+    for filename in BINARIES:
+        if os.path.exists(filename):
+            os.remove(filename)
+        
+    if action == "install":
+        fi.execute("cd fi/throttle/pathload/ && ./configure &> /dev/null && make &> /dev/null")
+        
+        if not os.path.exists(BINARIES[0]):
+            print "Failed"
+            exit(1)
 
 def doPaths(action):
     # Add path so process can find fi package
@@ -106,7 +125,7 @@ def main():
         print usage()
         exit(1)
     
-    for func in fi.chain(doPaths, modules[sys.argv[1]], doLogs):
+    for func in fi.chain(doPathload, doPaths, modules[sys.argv[1]], doLogs):
         func(sys.argv[2])
 
 if __name__ == '__main__':

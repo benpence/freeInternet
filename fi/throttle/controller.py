@@ -1,11 +1,19 @@
 from twisted.internet import protocol, reactor
 from twisted.python import log
 
+
 import fi
+import fi.exception as exception
 import fi.throttle
 from fi.throttle.protocol import ThrottleServerProtocol, ThrottleClientProtocol
 from fi.throttle.application import ThrottleApplication
-from fi.throttle.model import Throttle # Specific to server
+
+
+try:
+    import fi.throttle.model # Specific to server
+except exception.OperationalError, e:
+    pass
+
 
 class ThrottleServerController(protocol.ServerFactory):
     protocol = ThrottleServerProtocol
@@ -17,42 +25,51 @@ class ThrottleServerController(protocol.ServerFactory):
     @classmethod
     def update(cls):
         # Get updated values
-        Throttle.writeToDatabase(fi.DATABASE_PATH)
-        Throttle.readIntoMemory(fi.DATABASE_PATH)
         
         # Schedule
         allocations = ThrottleApplication.schedule(
             [(client.vpn_ip,
               client.credit)
-             for client in Throttle.search()])
+             for client in Client.query.all()])
              
         # Update memory
-        Throttle.allocate(allocations)
+        Client.allocate(allocations)
         
         # Perform network throttling
         ThrottleApplication.throttle(allocations)
         
         # Sleep until later
         reactor.callLater(
-            fi.throttle.THROTTLE_SLEEP,
-            cls.update)
+            fi.throttle.SLEEP,
+            cls.update
+        )
                 
     @classmethod
     def getBandwidth(cls, ip):
-        return Throttle.search(1, vpn_ip=ip).bandwidth
+        return Client.get_by(vpn_ip=ip).bandwidth
 
 class ThrottleClientController(protocol.ClientFactory):
     protocol = ThrottleClientProtocol
     
     def __init__(self):
-        ThrottleApplication.pathloadSend()
+        self.pathload = False
     
-    def clientConnectionLost(self, connector, reason):
-        ThrottleApplication.throttle([(fi.throttle.VPN_IP, self.allocation)])
+    def clientConnectionMade(self):
+        self.ip = self.transport.getPeer()
         
+        # Start once pathloading to server
+        if self.ip == fi.throttle.PATHLOAD_CLIENT and not self.pathload:
+            self.pathload = True
+            ThrottleApplication.pathloadSend()
+            
+    def clientConnectionLost(self, connector, reason):
+        if hasattr(self, 'allocation'):
+            ThrottleApplication.throttle([(fi.throttle.VPN_IP, self.allocation)])
+                    
         reactor.callLater(
-            fi.throttle.THROTTLE_SLEEP,
-            connector.connect)
+            fi.throttle.SLEEP,
+            connector.connect
+        )
     
     def allocate(self, allocation):
         self.allocation = allocation

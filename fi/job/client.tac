@@ -1,5 +1,3 @@
-import sys
-sys.path.append('/media/home/Source/freeInternet')
 from twisted.application import internet, service
 from twisted.python import log
 from twisted.spread import pb

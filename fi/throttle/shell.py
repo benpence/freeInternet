@@ -14,9 +14,9 @@ class Shell(object):
     def _dummyAction(self, data):
         pass
     
-    def add(self, command, function=None):
-        if function:
-            self.commands.append((command, function))
+    def add(self, command, callback=None):
+        if callback:
+            self.commands.append((command, callback))
         else:            
             self.commands.append((command, self._dummyAction))
     

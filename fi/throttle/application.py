@@ -1,8 +1,9 @@
+import os
 import math
 
-from twisted.python import log
 from twisted.internet import reactor
 
+import fi
 import fi.throttle
 import fi.throttle.shell
 import fi.exception as exception
@@ -19,22 +20,25 @@ class ThrottleApplication(object):
         
         max_credit = max(
             credits,
-            key=lambda x: x[1])[1]
+            key=lambda x: x[1]
+        )[1]
         
         # This right here is essentially the scheduling, converting the credit to proportional numbers
-        numbers = [
+        logs = [
             (ip,
-              math.log1p(credit + 1) * math.sqrt(max_credit))
+              math.log1p(credit + 1))
              for (ip, credit) in credits]
             
-        total_number = reduce(
+        total_log = reduce(
             lambda x, y: x + y,
             (n
-             for (_, n) in numbers)
+             for (_, n) in logs)
         )
 
-        allocations = ((ip, number / total_number * fi.throttle.MAX_BANDWIDTH)
-             for (ip, number) in numbers)
+        allocations = (
+            (ip, (log / total_log) * fi.throttle.MAX_BANDWIDTH)
+            for (ip, log) in logs
+        )
         
         return allocations
         
@@ -69,7 +73,7 @@ class ThrottleApplication(object):
             shell.add("/sbin/tc class add dev %s parent 1: classid 1:%d htb rate %sbps prio %d" % (
                 interface,
                 i + 1,
-                str(allocation * fi.throttle.BANDWIDTH_HEURISTIC),
+                str(int(allocation * fi.throttle.BANDWIDTH_HEURISTIC)),
                 i + 1
                 )
             )
@@ -104,12 +108,16 @@ class ThrottleApplication(object):
         
         shell = fi.throttle.shell.Shell()
         shell.add(
-            "pathload/pathload_rcv -s %s | awk '/Available/ {print $5,$7}'" % fi.throttle.PATHLOAD_CLIENT,
-            function=cls.onPathloadReceive
+            os.path.join(
+                fi.throttle.PATHLOAD_DIRECTORY,
+                "pathload/pathload_rcv -s %s | awk '/Available/ {print $5,$7}'" % 
+                    fi.throttle.PATHLOAD_CLIENT
+            ),
+            callback=cls.onPathloadReceive
         )
         
         reactor.callLater(
-            fi.throttle.THROTTLE_SLEEP,
+            fi.throttle.SLEEP,
             shell.execute
         )
     
@@ -122,12 +130,12 @@ class ThrottleApplication(object):
         Calls receive funciton again
         """
         # Acceptable error message:  "Make sure that pathload_snd runs at sender:: Connection refused"
-        if data.startswith("Make"):
-            raise exception.ConnectionError("pathload_rcv: Cannot connect to %s" % fi.throttle.PATHLOAD_CLIENT)
-
-        else:
+        if not data.startswith("Make"):
             low, high = data.strip().split()
             fi.throttle.MAX_BANDWIDTH = (float(high) + float(low)) / 2
+
+        #else:
+            #raise exception.ConnectionError("pathload_rcv: Cannot connect to %s" % fi.throttle.PATHLOAD_CLIENT)
 
         cls.pathloadReceive()
 
@@ -140,11 +148,14 @@ class ThrottleApplication(object):
         """
         shell = fi.throttle.shell.Shell()
         shell.add(
-            "pathload/pathload_snd -i",
-            function=lambda data: cls.pathloadSend()
+            os.path.join(
+                fi.throttle.PATHLOAD_DIRECTORY,
+                "pathload/pathload_snd -i"
+            ),
+            callback=lambda data: cls.pathloadSend()
         )
         
         reactor.callLater(
-            fi.throttle.THROTTLE_SLEEP,
+            fi.throttle.SLEEP,
             shell.execute
         )

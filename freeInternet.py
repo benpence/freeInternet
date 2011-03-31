@@ -1,6 +1,3 @@
-import sys
-sys.path.append('/media/home/Source/freeInternet')
-import sys
 import commands
 import os
 

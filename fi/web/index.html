@@ -4,40 +4,37 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Free Internet Admin Panel</title>
-    <link href="css/styles.css" rel="stylesheet" type="text/css"></link>
 
+    <!-- JQuery -->
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     <script type="text/javascript" src="js/jquery.log.js"></script>
     
+    <!-- Dojo -->
+    <script src="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dojo/dojo.xd.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/dojo/1.6/dijit/themes/nihilo/nihilo.css" />
+    
+    <!-- Highcharts -->
     <script type="text/javascript" src="js/highcharts/highcharts.js"></script>
     
+    <!-- Classy -->
     <script language="text/javascript" type="text/javascript" src="js/classy/classy.js"></script>
-    
 
+    <!-- FreeInternet -->
     <script language="text/javascript" type="text/javascript" src="js/freeInternet.js"></script>
     <script language="text/javascript" type="text/javascript" src="js/freeInternet.charts.js"></script>
-    <script language="text/javascript" type="text/javascript" src="js/freeInternet.inspect.js"></script>
+    <script language="text/javascript" type="text/javascript" src="js/freeInternet.dojo.js"></script>
+    <link href="css/styles.css" rel="stylesheet" type="text/css"></link>
 </head>
 
-<body>
+<body class='nihilo'>
     <h1>Free Internet Admin Panel</h1>
 
-    <div class="left-side" id="charts"></div>
-    
-    <div class="right-side">
-        <div class="logo">
-            <img src="img/logo.png" />
-        </div>
-
-        <div class="toolbar">
-            <div class="tool" id="inspect">
-                <img id="inspect_icon" src="img/inspect.png" alt="Pause polling the server for values"/>
-                <span id="inspect_text">Inspect</span>
-            </div>
-        </div>
+    <div id="tab_container" style="width: 620px; height: 480px">
+        <div id="interface" />
+    </div>
         
-        <div id="legend"></div>
-    </div>   
-
+    <div id="jobs_node" />
+    <div id="graphs_node" />
+    
 </body>
 </html>

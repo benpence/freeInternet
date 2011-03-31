@@ -36,6 +36,11 @@ freeInternet.Charts = Class.$extend({
                     easing: 'linear'
 
                 },
+                events: {
+                    click: function(e){
+                        ui.charts.inspect = !ui.charts.inspect;
+                    }
+                },
             },
             xAxis: {
                 /*title: {
@@ -118,7 +123,7 @@ freeInternet.Charts = Class.$extend({
 
     updateForever : function(self, data){
         /*
-            data:{String:{String:int}} -> undefined
+            data:{{int}} -> undefined
 
             Updates/creates initial lines with data
             Calls to plot each graph
@@ -153,7 +158,12 @@ freeInternet.Charts = Class.$extend({
 
         setTimeout(
             function (){
-                self.ajaxCallback(self.updateForever)
+                freeInternet.ajaxCallback(
+                    self,
+                    'creditbandwidth.json',
+                    '',
+                    self.updateForever
+                )
             },
             self.TIMESTEP * 1000
         );
@@ -191,28 +201,10 @@ freeInternet.Charts = Class.$extend({
                     data: []
                 });
             }
-            $.log(self.CHARTS_NODE);
             self.charts[chart_name] = new Highcharts.Chart(options);
         })
 
         self.updateForever(self, data);
-    },
-
-    ajaxCallback : function(callback){
-        var self = this;
-        /*
-            ajaxCallback
-            callback:function -> undefined
-
-            Streamlines ajax calls with data callback function
-        */
-        $.ajax({
-            //url: "data.json",
-            url: 'test/test' + (this.count++ % 6) + '.json',
-            method: 'GET',
-            dataType: 'json',
-            success: function (data){ callback(self, data) }
-        });
     },
 
     __init__ : function(CHARTS_NODE){
@@ -220,8 +212,15 @@ freeInternet.Charts = Class.$extend({
     },
 });
 
+/*    
 var charts;
 $(function(){
-    charts = new freeInternet.Charts($('#charts'));
-    charts.ajaxCallback(charts.drawCharts);
+    charts = new freeInternet.Charts($('#interface'));
+    freeInternet.ajaxCallback(
+        charts,
+        'creditbandwidth.json',
+        '',
+        charts.drawCharts
+    );
 });
+*/

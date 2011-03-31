@@ -1,4 +1,3 @@
-ROOT_DIRECTORY = "/media/home/Source/freeInternet"
 import os
 import subprocess
 

@@ -6,6 +6,7 @@ class Client(model.Model):
     vpn_ip          = model.Field(model.String, primary_key=True)
     credit          = model.Field(model.Integer)
     bandwidth       = model.Field(model.Integer)
+    model.using_options(order_by='-credit')
     
     @classmethod
     def byIP(cls, ip):
