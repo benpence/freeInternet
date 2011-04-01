@@ -3,13 +3,13 @@ import json
 from twisted.web.server import Site
 
 import fi
-from fi.web.protocol import WebProtocol
+import fi.web.protocol
 import fi.throttle.model
 import fi.job.model
 
 class WebController(Site):
     def __init__(self):
-        Site.__init__(self, WebProtocol(self))
+        Site.__init__(self, fi.web.protocol.WebProtocol(self))
     
     def json(self, request, name):
         MAP = {
@@ -34,7 +34,6 @@ class WebController(Site):
         credit = {}
         bandwidth = {}
         for client in clients:
-            client.refresh()
             credit[client.vpn_ip] = client.credit
             bandwidth[client.vpn_ip] = client.bandwidth
     
@@ -101,7 +100,6 @@ class WebController(Site):
         data = {}
         
         for ass in query:
-            ass.refresh()
             if ass.date_issued and ass.date_returned and ass.output and ass.verified:
                 data[ass.id] = {
                     'ip': ass.client.ip,

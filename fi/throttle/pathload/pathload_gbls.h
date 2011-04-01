@@ -82,8 +82,8 @@
 #define  GOOD_TRAIN         0x0000000b
 
 /* Port numbers (UDP for receiver, TCP for sender) */
-#define UDPRCV_PORT         55001
-#define TCPSND_PORT         55002
+#define UDPRCV_PORT         6667
+#define TCPSND_PORT         6668
 #define UDP_BUFFER_SZ       400000    /* bytes */
 #define TREND_ARRAY_LEN     50 
 

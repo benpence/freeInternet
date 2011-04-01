@@ -1,6 +1,6 @@
 from twisted.internet import utils
 
-import exception
+import fi.exception as exception
 
 class Shell(object):
     def __init__(self, *commands):

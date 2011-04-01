@@ -1,14 +1,11 @@
 import fi
 import os
 
-THROTTLE_PORT = 6666
+PORT = 6666
 VPN_INTERFACE = "tun0"
+VPN_SERVER_IP = "10.8.0.1" # VPN address of server
 
-SLEEP = 2 # How long to sleep between asking for / calculating allocations
-
-VPN_IP = "10.8.0.1" # VPN address of server
-
-MAX_BANDWIDTH = 4000 # Initial maximum bandwidth
+AVAILABLE_BANDWIDTH = 4000 # Initial maximum bandwidth
 BANDWIDTH_HEURISTIC = 18 # For adjustment to real units
 
 PATHLOAD_DIRECTORY = os.path.join(fi.ROOT_DIRECTORY, 'fi', 'throttle', 'pathload') 

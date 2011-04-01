@@ -15,7 +15,6 @@ class ThrottleApplication(object):
         credits:[(str, int)] -> None
         
         """
-
         print "Scheduling"
         
         max_credit = max(
@@ -36,7 +35,7 @@ class ThrottleApplication(object):
         )
 
         allocations = (
-            (ip, (log / total_log) * fi.throttle.MAX_BANDWIDTH)
+            (ip, (log / total_log) * fi.throttle.AVAILABLE_BANDWIDTH)
             for (ip, log) in logs
         )
         
@@ -69,34 +68,26 @@ class ThrottleApplication(object):
 
         # Create node, filter, and /sbin/iptables mark rule for each client
         for i, (ip, allocation) in enumerate(allocations):
+            bandwidth = float(allocation) * fi.throttle.BANDWIDTH_HEURISTIC
             # Create classes off of root qdisc
             shell.add("/sbin/tc class add dev %s parent 1: classid 1:%d htb rate %sbps prio %d" % (
-                interface,
-                i + 1,
-                str(int(allocation * fi.throttle.BANDWIDTH_HEURISTIC)),
-                i + 1
+                interface, i + 1, bandwidth, i + 1
                 )
             )
 
             # Mark traffic 
             shell.add("/sbin/iptables -t mangle -A POSTROUTING -d %s -j MARK --set-mark %d" % (
-                ip,
-                i + 1
+                ip, i + 1
                 )
             )
 
             # Filter traffic
             shell.add("/sbin/tc filter add dev %s parent 1:0 protocol ip prio %d handle %d fw flowid 1:%d" % (
-                interface,
-                i + 1,
-                i + 1,
-                i + 1
+                interface, i + 1, i + 1, i + 1
                 )
             )
             
         shell.execute()
-
-    """TODO: Test pathload code"""
 
     @classmethod
     def pathloadReceive(cls):
@@ -117,7 +108,7 @@ class ThrottleApplication(object):
         )
         
         reactor.callLater(
-            fi.throttle.SLEEP,
+            fi.SLEEP,
             shell.execute
         )
     
@@ -129,13 +120,25 @@ class ThrottleApplication(object):
         Receives bandwidth data in form "float float" and sets max bandwidth
         Calls receive funciton again
         """
-        # Acceptable error message:  "Make sure that pathload_snd runs at sender:: Connection refused"
-        if not data.startswith("Make"):
-            low, high = data.strip().split()
-            fi.throttle.MAX_BANDWIDTH = (float(high) + float(low)) / 2
-
-        #else:
-            #raise exception.ConnectionError("pathload_rcv: Cannot connect to %s" % fi.throttle.PATHLOAD_CLIENT)
+        try:
+            lines = data.split('\n')
+            high = 0
+            low = 0
+            
+            for line in lines:
+                if 'Available' in line:
+                    words = line.split()
+                    low = float(words[4])
+                    high = float(words[6])
+            
+            if high and low:
+                available = (high + low) / 8 / 2 * 1000
+                print "Setting new available bandwidth to ", available, "kbps"
+                # Convert from Mbps to kBps and set to available bandwidth
+                
+                fi.throttle.AVAILABLE_BANDWIDTH = available
+        except ValueError, e:
+            print "Unsuccessful parsing for available bandwidth"
 
         cls.pathloadReceive()
 
@@ -156,6 +159,6 @@ class ThrottleApplication(object):
         )
         
         reactor.callLater(
-            fi.throttle.SLEEP,
+            fi.SLEEP,
             shell.execute
         )

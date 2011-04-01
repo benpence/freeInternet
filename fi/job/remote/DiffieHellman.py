@@ -7,14 +7,14 @@ class DiffieHellman(fi.job.remote.RemoteJob):
     @classmethod
     def getOutput(cls, p, g, Ay, By, start, stop):
         # Try all stop->stop private keys
-        Ax = start
-        while cls.squareAndMultiply(g, Ax, p) != Ay and Ax <= stop + 1:
-            Ax += 1;
+        for Ax in range(start, stop + 1):
+            product = cls.squareAndMultiply(g, Ax, p)
             
-        # Not in range?
-        if Ax == stop + 1:
-            return "Private key not in range"
-        
+            if product == Ay:
+                return "Shared key %d" % cls.squareAndMultiply(By, Ax, p)
+                
+        return "Private key not in range"
+            
         # Report shared key
         return "Shared key %d" % cls.squareAndMultiply(By, Ax, p)
     
@@ -28,8 +28,9 @@ class DiffieHellman(fi.job.remote.RemoteJob):
         binary_power = []
 
         while power > 0:
-            binary_power.insert(0, power % 2)
+            binary_power.append(power % 2)
             power /= 2
+        binary_power.reverse()
 
         output = 1
         for bit in binary_power:
@@ -42,8 +43,8 @@ class DiffieHellman(fi.job.remote.RemoteJob):
 
 class DiffieHellmanInput(fi.job.remote.RemoteJobInput):
     # About Task
-    DESCRIPTION = "A brute force attack against a Diffie-Hellman-Merkle Key Exchange"
-    CREDIT = 20
+    DESCRIPTION = "Brute force attack against a Diffie-Hellman-Merkle Key Exchange"
+    CREDIT = 5
     
     # Constants
     MIN_PRIME = 2 # First prime is 2. DON'T CHANGE THIS

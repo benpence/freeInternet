@@ -1,21 +1,19 @@
 import os
 import subprocess
 
+import twisted.internet.defer
+
 # CONFIG
 HOST = "127.0.0.1" # Server IP
+SLEEP = 2 # Standard tiem to wait until doing something else
+
 try:
     DATABASE_PATH = os.path.join(ROOT_DIRECTORY, "freeInternet.db")
 except NameError, e:
     DATABASE_PATH = os.path.join(os.path.abspath('../'), "freeInternet.db")
 
-def isNumber(number):
-    try:
-        float(number)
-        return True
-    except TypeError:
-        return False
-    except ValueError:
-        return False
+
+inlineCallbacks = twisted.internet.defer.inlineCallbacks
 
 def makeUsage(args, rules):
     return "Usage: " + args[0] + ' ' + ' '.join(

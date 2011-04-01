@@ -58,11 +58,8 @@ def doPaths(action):
     # Add path so process can find fi package
     print "Setting application paths..."
     SCRIPTS = (
-        'fi/job/client.tac',
-        'fi/job/server.tac',
-        'fi/throttle/client.tac',
-        'fi/throttle/server.tac',
-        'fi/web/server.tac',
+        'fi/client.tac',
+        'fi/server.tac',
         'freeInternet.py',
     )
 

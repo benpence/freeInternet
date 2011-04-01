@@ -3,28 +3,6 @@ from twisted.trial import unittest
 import fi
 
 class TestSequenceFunctions(unittest.TestCase):
-            
-    def test_isNumber(self):
-        self.assertTrue(
-            reduce(
-                lambda x, y: x and y,
-                map(
-                    lambda x: fi.isNumber(x),
-                    ('33', '-1', '0', '1', '1.0', '1.55e20')
-                )
-            )
-        )
-        
-        self.assertTrue(
-            not reduce(
-                lambda x, y: x or y,
-                map(
-                    lambda x: fi.isNumber(x),
-                    ('aa', [1], {1:5}, (5, 1))
-                )
-            )
-        )
-
     
     def test_invalidArgs(self):
         rules = (
