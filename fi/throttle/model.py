@@ -1,5 +1,5 @@
 import fi.model as model
-import fi.exception as exception
+import fi.exception
 
 class Client(model.Model):
     ip              = model.Field(model.String, primary_key=True)
@@ -14,7 +14,7 @@ class Client(model.Model):
         
         if not client:
             if ip != '127.0.0.1':
-                raise EmptyQueryError("Invalid IP: " + ip)
+                raise fi.exception.EmptyQueryError("Invalid IP: " + ip)
 
             return cls(
                 ip='127.0.0.1',

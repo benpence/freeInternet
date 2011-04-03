@@ -1,10 +1,12 @@
 from twisted.internet import utils
 
-import fi.exception as exception
+import fi
+import fi.exception
 
 class Shell(object):
     def __init__(self, *commands):
         self.commands = []
+        self.deferred = None
         
         for command in commands:
             self.add(*command)
@@ -25,7 +27,7 @@ class Shell(object):
             command = self.commands[self.index - 1]
             
             if len(command) != 2:
-                raise exception.UnexpectedError("Invalid tuple in command list")
+                raise fi.exception.UnexpectedError("Invalid tuple in command list")
                 
             self.commands[self.index - 1][1](data)
 
@@ -33,21 +35,26 @@ class Shell(object):
 
         if self.index == len(self.commands):
             self.commands = []
-            self.transport.loseConnection()
+            self.index = 0
+            return
 
         command = self.commands[self.index][0].split()
 
         executable = command[0]
         arguments = command[1:]
 
-        d = utils.getProcessOutput(
-            executable,
-            arguments,
-            errortoo=True
-        )
+        # We want to return a deferred
+        def startExecuting():
+            self.deferred = utils.getProcessOutput(
+                executable,
+                arguments,
+                errortoo=True
+            )
 
-        self.index += 1
+            self.index += 1
 
-        d.addCallback(react)
+            self.deferred.addCallback(react)
         
-        return d
+        fi.callLater(startExecuting)
+        
+        return self.deferred

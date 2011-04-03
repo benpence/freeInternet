@@ -1,12 +1,10 @@
 import os
 import math
 
-from twisted.internet import reactor
-
 import fi
 import fi.throttle
 import fi.throttle.shell
-import fi.exception as exception
+import fi.exception
 
 class ThrottleApplication(object):    
     @classmethod
@@ -15,7 +13,7 @@ class ThrottleApplication(object):
         credits:[(str, int)] -> None
         
         """
-        print "Scheduling"
+        fi.logmsg(cls, "Scheduling")
         
         max_credit = max(
             credits,
@@ -48,7 +46,7 @@ class ThrottleApplication(object):
         
         """
 
-        print "Making allocations"
+        fi.logmsg(cls, "Making allocations")
         
         shell = fi.throttle.shell.Shell()
         interface = fi.throttle.VPN_INTERFACE
@@ -87,7 +85,7 @@ class ThrottleApplication(object):
                 )
             )
             
-        shell.execute()
+        #shell.execute()
 
     @classmethod
     def pathloadReceive(cls):
@@ -101,16 +99,11 @@ class ThrottleApplication(object):
         shell.add(
             os.path.join(
                 fi.throttle.PATHLOAD_DIRECTORY,
-                "pathload/pathload_rcv -s %s | awk '/Available/ {print $5,$7}'" % 
-                    fi.throttle.PATHLOAD_CLIENT
+                "pathload/pathload_rcv -s %s" % fi.throttle.PATHLOAD_CLIENT
             ),
             callback=cls.onPathloadReceive
         )
-        
-        reactor.callLater(
-            fi.SLEEP,
-            shell.execute
-        )
+        #shell.execute()
     
     @classmethod
     def onPathloadReceive(cls, data):
@@ -133,12 +126,12 @@ class ThrottleApplication(object):
             
             if high and low:
                 available = (high + low) / 8 / 2 * 1000
-                print "Setting new available bandwidth to ", available, "kbps"
+                fi.logmsg(cls, "Setting new available bandwidth to ", available, "kbps")
                 # Convert from Mbps to kBps and set to available bandwidth
                 
                 fi.throttle.AVAILABLE_BANDWIDTH = available
         except ValueError, e:
-            print "Unsuccessful parsing for available bandwidth"
+            fi.logmsg(cls, "Unsuccessful parsing for available bandwidth")
 
         cls.pathloadReceive()
 
@@ -158,7 +151,4 @@ class ThrottleApplication(object):
             callback=lambda data: cls.pathloadSend()
         )
         
-        reactor.callLater(
-            fi.SLEEP,
-            shell.execute
-        )
+        #shell.execute()

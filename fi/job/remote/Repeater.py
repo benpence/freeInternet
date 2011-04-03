@@ -5,8 +5,6 @@ import fi.job.remote
 class Repeater(fi.job.remote.RemoteJob):
     @classmethod
     def getOutput(cls, message):
-        time.sleep(5)
-        
         return message
 
 class RepeaterInput(fi.job.remote.RemoteJobInput):

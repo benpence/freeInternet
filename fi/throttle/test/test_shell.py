@@ -1,6 +1,5 @@
 from twisted.trial import unittest
 
-from twisted.internet import reactor
 from twisted.internet import protocol
 from twisted.protocols.basic import LineReceiver
 from twisted.test import proto_helpers

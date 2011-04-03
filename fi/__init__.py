@@ -1,19 +1,26 @@
 import os
 import subprocess
 
-import twisted.internet.defer
+from twisted.internet import reactor
+
+import fi.log
 
 # CONFIG
 HOST = "127.0.0.1" # Server IP
 SLEEP = 2 # Standard tiem to wait until doing something else
 
-try:
-    DATABASE_PATH = os.path.join(ROOT_DIRECTORY, "freeInternet.db")
-except NameError, e:
-    DATABASE_PATH = os.path.join(os.path.abspath('../'), "freeInternet.db")
+# For logging
+def logmsg(cls, message):
+    fi.log.log.msg(
+        "[%s] %s" % (cls.__name__, message)
+    )
 
-
-inlineCallbacks = twisted.internet.defer.inlineCallbacks
+def callLater(*args, **kwargs):
+    reactor.callLater(
+        SLEEP,
+        *args,
+        **kwargs
+    )
 
 def makeUsage(args, rules):
     return "Usage: " + args[0] + ' ' + ' '.join(

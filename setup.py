@@ -50,7 +50,7 @@ def doPathload(action):
     if action == "install":
         fi.execute("cd fi/throttle/pathload/ && ./configure &> /dev/null && make &> /dev/null")
         
-        if not os.path.exists(BINARIES[0]):
+        if not all(map(os.path.exists, BINARIES)):
             print "Failed"
             exit(1)
 
@@ -80,9 +80,9 @@ def doPaths(action):
     )
 
 def doDatabase(action):
-    if os.path.exists(fi.DATABASE_PATH):
+    if os.path.exists(fi.model.DATABASE_PATH):
         print "Deleting old database..."
-        fi.execute("rm -f " + fi.DATABASE_PATH)
+        fi.execute("rm -f " + fi.model.DATABASE_PATH)
     
     # Install    
     if action == 'install':

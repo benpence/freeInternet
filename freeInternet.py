@@ -1,33 +1,28 @@
-import commands
 import os
 
 import fi
 
-def start(slash, dot):
+def start(module):
     fi.execute(
         "twistd -y %s.tac --pidfile=%s.pid --logfile=logs/%s" % (
             os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
-            dot,
-            dot
+            module, 
+            module,
         )
     )
     
-    pid = open(dot + ".pid", 'r').read().strip()
-    
-    print "%s started with pid %s" % (
-        dot,
-        pid
-    )
+    pid = open(module + ".pid", 'r').read().strip()
+    print "%s started with pid %s" % (module, pid)
 
-def start_test(slash, dot):
+def start_test(module):
     print fi.execute(
-        "twistd -ny %s.tac --pidfile=%s.pid" % (
+        "python %s.tac" % (
             os.path.join(fi.ROOT_DIRECTORY, 'fi', slash),
             dot
         )
     )
 
-def stop(slash, dot):
+def stop(module):
     pid_file = dot + ".pid"
 
     if not os.path.exists(pid_file):
@@ -41,11 +36,11 @@ def stop(slash, dot):
         pid
     )
 
-def restart(slash, dot):
-    stop(slash, dot)
-    start(slash, dot)
+def restart(module):
+    stop(module)
+    start(module)
     
-def status(slash, dot):
+def status(module):
     pid_file = dot + ".pid"
     
     if not os.path.exists(pid_file):
@@ -59,11 +54,10 @@ def status(slash, dot):
             pid
         )
 
-modules_to_apps = {
-    "job": ("client", "server"),
-    "throttle": ("server"),
-    "web": ("server"),
-}
+modules = (
+    "server",
+    "client",
+)
 
 actions = {
     "start": start,
@@ -73,42 +67,20 @@ actions = {
     "status": status,
 }
 
-def usage():
-    print "Usage: %s {%s} {%s}" % (
-        sys.argv[0],
-        '|'.join(modules_to_apps.keys()),
-        '|'.join(actions.keys())
+def main():    
+    usage = fi.invalidArgs(
+        sys.argv,
+        (modules, actions),
     )
-    exit(0)
-
-def main():
-    # Check length
-    if len(sys.argv) != 4:
-        usage()
-        
-    # Check module
-    elif sys.argv[1] not in modules_to_apps:
-        usage()
     
-    module = sys.argv[1]
+    if usage:
+        print usage
+        exit(1)
     
-    # Check app
-    if sys.argv[2] not in modules_to_apps[module]:
-        usage()
-    
-    app = sys.argv[2]
-    
-    # Check action
-    if sys.argv[3] not in actions:
-        usage()
-    
-    # Add module to path
-    sys.path.append('.')
+    module, action = sys.argv[:2]
     
     # Perform action
-    name_slash = '/'.join((module, app))
-    name_dot = '.'.join((module, app))
-    actions[sys.argv[3]](name_slash, name_dot)
+    actions[action](module)
     
 if __name__ == "__main__":
     main()

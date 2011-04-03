@@ -57,7 +57,7 @@ class Verifier(object):
         Yes -> "Correct" to majority, "Incorrect for rest"
         No  -> "Inconclusive" for all
         """
-        print "Verifying %d-%d" % tuple(map(lambda x: x.id, key))
+        fi.logmsg(cls, "Verifying %d-%d" % tuple(map(lambda x: x.id, key)))
         
         assignments = cls.digests[key]
         votes = {}

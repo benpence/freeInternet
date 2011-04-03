@@ -1,18 +1,14 @@
 import commands
 import sys
 
-# Client
-import imp
-
 from twisted.python import log
-from twisted.internet import reactor
 
+import fi
 import fi.controller
-import fi.exception as exception
 
 class JobServerController(fi.controller.ServerController):
     def __init__(self):
-        import fi.job.model as model
+        import fi.job.model
         import fi.job.verifier
     
     def remote_getJob(self, ip):
@@ -21,15 +17,18 @@ class JobServerController(fi.controller.ServerController):
         
         Returns the path to the next job
         """
-        assignment = model.Assignment.getNextJob(ip)
-        model.Assignment.record(ip, assignment)
+        assignment = fi.job.model.Assignment.getNextJob(ip)
+        fi.job.model.Assignment.record(ip, assignment)
                         
-        log.msg("Assigning %d-%d-%d to %s" % (
-            assignment.job.id,
-            assignment.instance.id,
-            assignment.id,
-            ip,
-        ))
+        fi.logmsg(
+            self.__class__,
+            "Assigning %d-%d-%d to %s" % (
+                assignment.job.id,
+                assignment.instance.id,
+                assignment.id,
+                ip,
+            )
+        )
         
         return assignment.job.name, assignment.job.module, assignment.instance.input
     
@@ -41,23 +40,28 @@ class JobServerController(fi.controller.ServerController):
         Marks completion in database
         """
         # Get relevant assignment
-        assignment = model.Assignment.lookup(ip)
+        assignment = fi.job.model.Assignment.lookup(ip)
 
-        model.Assignment.complete(ip, output)
+        fi.job.model.Assignment.complete(ip, output)
         
-        log.msg("Completed %d-%d-%d for %s" % (
-            assignment.job.id,
-            assignment.instance.id,
-            assignment.id,
-            ip,
-        ))
+        fi.logmsg(
+            self.__class__,
+            "Completed %d-%d-%d for %s" % (
+                assignment.job.id,
+                assignment.instance.id,
+                assignment.id,
+                ip,
+            )
+        )
       
         fi.job.verifier.Verifier.verify(assignment)
-    
+
 class JobClientController(fi.controller.ClientController):
     
     def gotRoot(self, root):
-        print "Receiving Job"  
+        self.root = root
+        
+        fi.logmsg(self.__class__, "Receiving Job")
         job_d = root.callRemote("getJob", self.ip)
         job_d.addCallbacks(self.gotJob, self.gotNothing)
     
@@ -73,24 +77,32 @@ class JobClientController(fi.controller.ClientController):
             name, module_input, job_input = job
         except ValueError, e:
             """TODO: Disconnect and get another job"""
-            print "Invalid job"
+            fi.logmsg(self.__class__, "Invalid job")
                         
-        print "Running %s on %s" % (name, job_input)
-        
+        fi.logmsg(self.__class__, "Running %s on %s" % (name, job_input))
         module = self.stringToModule(module_input, name)
+        output = module.__getattribute__(name).getOutput(*job_input)
         
-        complete = self.tasker.callRemote(
+        fi.logmsg(self.__class__, "Returning job output")
+        complete = self.root.callRemote(
             "returnJob",
             self.ip,
-            module.__getattribute__(name).getOutput(*job_input),
+            output,
         )
         
-        print "Returning job output"
-        complete.addCallbacks(self.getJob, self.gotNothing)
+        def getAnother():
+            complete.addCallbacks(
+                lambda _: self.gotRoot(self.root),
+                self.gotNothing
+            )
+            
+        fi.callLater(getAnother)
     
     @classmethod
     def stringToModule(cls, code, name):
         """Credit: code.activestate.com/recipes/82234-importing-a-dynamically-generated-module/"""
+        import imp
+        
         if name in sys.modules:
             return sys.modules[name]
 

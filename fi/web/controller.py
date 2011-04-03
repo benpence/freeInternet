@@ -8,6 +8,8 @@ import fi.throttle.model
 import fi.job.model
 
 class WebController(Site):
+    noisy = False
+    
     def __init__(self):
         Site.__init__(self, fi.web.protocol.WebProtocol(self))
     

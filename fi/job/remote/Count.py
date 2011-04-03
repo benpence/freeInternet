@@ -6,9 +6,7 @@ import fi.job.remote
 class Count(fi.job.remote.RemoteJob):
     @classmethod
     def getOutput(cls, start, stop):
-        time.sleep(1)
-        
-        return ' '.join(range(start, stop + 1))
+        return ' '.join(map(str, range(start, stop + 1)))
 
 class CountInput(fi.job.remote.RemoteJobInput):
     # About Task
@@ -19,5 +17,5 @@ class CountInput(fi.job.remote.RemoteJobInput):
     
     @classmethod
     def generateInput(cls):
-    	for i in itertools.count:
+    	for i in itertools.count(0):
     		yield (i, i + cls.RANGE)

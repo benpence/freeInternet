@@ -5,7 +5,7 @@ import itertools
 import fi.job
 import fi.model as model
 from fi.throttle.model import Client # So foreign key references are valid
-import fi.exception as exception
+import fi.exception
 
 class Job(model.Model):
     id              = model.Field(model.Integer, primary_key=True, autoincrement=True)
@@ -82,7 +82,7 @@ class Assignment(model.Model):
         assignment = cls.lookup(ip)
         
         if not assignment:
-            raise exception.EmptyQueryError("No assignment for completed job")
+            raise fi.exception.EmptyQueryError("No assignment for completed job")
 
         assignment.date_returned = datetime.datetime.now()
         assignment.output = output
@@ -132,7 +132,15 @@ def nameToInput(task_name):
 
 def setup():
     prefix = os.path.join('fi', 'job', 'remote')
-    files = (f for f in os.listdir(prefix) if f.endswith('.py') and f != '__init__.py')
+    files = (
+        f
+        for f in os.listdir(prefix)
+        if  f.endswith('.py') and
+            f != '__init__.py' and
+            os.path.isfile(
+                os.path.join(prefix, f)
+            )
+    )
     
     for i, filename in enumerate(files):
         # Add job
@@ -142,7 +150,6 @@ def setup():
         with open(os.path.join(prefix, filename), 'r') as module:
             module_input = module.read().split('class %sInput' % name)[0]
         
-    
         job = Job(
             id=i,
             name=name,

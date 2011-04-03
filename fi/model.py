@@ -4,8 +4,10 @@ import elixir
 
 import fi
 
+DATABASE_PATH = os.path.join(fi.ROOT_DIRECTORY, "freeInternet.db")
+
 # Make connection to sqlite
-elixir.metadata.bind = "sqlite:///%s" % fi.DATABASE_PATH
+elixir.metadata.bind = "sqlite:///%s" % DATABASE_PATH
 
 # Global options
 elixir.options_defaults['shortnames'] = True
