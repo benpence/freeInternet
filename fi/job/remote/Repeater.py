@@ -10,6 +10,8 @@ class Repeater(fi.job.remote.RemoteJob):
 class RepeaterInput(fi.job.remote.RemoteJobInput):
     # About Task
     DESCRIPTION = "Waits and then repeats back what you give it"
+    INPUT = "(Statement)"
+    OUTPUT = "(Statement)"
     CREDIT = 5
     
     @classmethod

@@ -9,13 +9,14 @@ import fi.log
 HOST = "127.0.0.1" # Server IP
 SLEEP = 2 # Standard tiem to wait until doing something else
 
-# For logging
 def logmsg(cls, message):
+    """Global logging tool"""
     fi.log.log.msg(
         "[%s] %s" % (cls.__name__, message)
     )
 
 def callLater(*args, **kwargs):
+    """Call first param from *args later with the rest of the parameters"""
     reactor.callLater(
         SLEEP,
         *args,
@@ -23,6 +24,7 @@ def callLater(*args, **kwargs):
     )
 
 def makeUsage(args, rules):
+    """Create usage string for failed args check"""
     return "Usage: " + args[0] + ' ' + ' '.join(
         ('{%s}' % '|'.join(
             (
@@ -35,7 +37,9 @@ def makeUsage(args, rules):
 
 def invalidArgs(args, rules):
     """
-    args:[str] | rules:([]/{}) -> bool
+    args:[str] | rules:iter(str) -> str OR False
+    
+    If each nth element is not in the nth list in rules, return usage else False
     """
     
     usage = lambda: makeUsage(args, rules)
@@ -53,7 +57,8 @@ def execute(command):
     """
     command:str -> str
     
-    Execute an 'sh' command and return output from its stdout
+    Execute a shell command and return output from its stdout
+    This is only for non-twisted code
     """
     return subprocess.Popen(
         command,
@@ -62,6 +67,11 @@ def execute(command):
     ).communicate()[0]
 
 def chain(*args):
+    """
+    *args:_ -> generator
+    
+    chains elements and shallow lists together
+    """
     for arg in args:
         try:
             lst = iter(arg)

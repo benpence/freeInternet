@@ -18,14 +18,16 @@ class WebController(Site):
             'creditbandwidth': self._creditBandwidth,
             'jobs': self._jobs,
             'assignments': self._assignments,
+            'output': self._output,
         }
         
-        function_input = name.replace('.json', '').split('-')
+        function_input = name[:-5].split('-')
         
         for function_name in MAP:
             if function_name in name:
                 return json.dumps(
-                    MAP[function_name](function_input))
+                    MAP[function_name](function_input)
+                )
 
         # Catch all
         return json.dumps(_creditBandwidth(function_input))
@@ -55,7 +57,10 @@ class WebController(Site):
                 'label': '%d: %s' % (job.id, job.name),
                 'type': 'job',
                 'description': job.description,
+                'input': job.input_desc,
+                'output': job.output_desc,
                 'children': [],
+                'name': job.name,
             })
             
             for i, instance in enumerate(fi.job.model.Instance.query.filter_by(job_id=job.id).all()):
@@ -65,16 +70,14 @@ class WebController(Site):
                 )
                 
                 # Add child
-                items.append(
-                    {
-                        'id': "%d%d" % (job.id, instance.id),
-                        'label': '%d: %s' % (instance.id, str(instance.input)),
-                        'type': 'instance',
-                        'job': job.name,
-                        'job_id': str(job.id),
-                        'instance_id': str(instance.id),
-                    }
-                )
+                items.append({
+                    'id': "%d%d" % (job.id, instance.id),
+                    'label': '%d: %s' % (instance.id, str(instance.input)),
+                    'type': 'instance',
+                    'job': job.name,
+                    'job_id': str(job.id),
+                    'instance_id': str(instance.id),
+                })
             
         # Create context around the tree and return it
         return {
@@ -84,9 +87,9 @@ class WebController(Site):
         }
         
 
-    def _assignments(self, input):
+    def _assignments(self, string):
         try:
-            name, job_id, instance_id = input
+            name, job_id, instance_id = string
         except ValueError, e:
             return {"error": "Invalid JSON request"}
         
@@ -99,16 +102,34 @@ class WebController(Site):
             instance_id=instance_id,
         ).all()
     
-        data = {}
+        data = []
         
         for ass in query:
-            if ass.date_issued and ass.date_returned and ass.output and ass.verified:
-                data[ass.id] = {
+            if ass.time_issued and ass.time_returned and ass.output and ass.verified:
+                data.append({
+                    'id': ass.id,
                     'ip': ass.client.ip,
-                    'date_issued': ass.date_issued.strftime("%Y/%m/%d %H:%M EST"),
-                    'date_returned': ass.date_returned.strftime("%Y/%m/%d %H:%M EST"),
-                    'output': ass.output,
-                    'verified': ass.verified
-                }
+                    'time_issued': ass.time_issued.strftime("%Y/%m/%d %H:%M:%S EST"),
+                    'time_returned': ass.time_returned.strftime("%Y/%m/%d %H:%M:%S EST"),
+                    'verified': ass.verified,
+                })
         
-        return data
+        # Make compatible with dojo expected format
+        return {
+            "identifier": 'id',
+            "items": data
+        }
+        
+    def _output(self, string):
+        try:
+            name, job_id, instance_id, assignment_id = string
+        except ValueError, e:
+            return {"error": "Invalid JSON request"}
+
+        ass = fi.job.model.Assignment.get_by(
+            job_id=int(job_id),
+            instance_id=int(instance_id),
+            id=int(assignment_id)
+        )    
+
+        return {'output': ass.output}

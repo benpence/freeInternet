@@ -15,6 +15,7 @@ factories = (
     (fi.throttle.PORT,  fi.throttle.controller.ThrottleClientController()),
 )
 
+#Running via python or twistd?
 if __name__ == '__main__':
     # Python
     from twisted.internet import reactor
@@ -25,13 +26,13 @@ if __name__ == '__main__':
     reactor.run()
 
 else:
-    # Daemon
+    # Twistd
     from twisted.application import internet, service
     
     collection = service.IServiceCollection(
         service.Application(
             "FreeInternet Client",
-            uid=0, gid=0
+            uid=1, gid=1
         )
     )
     

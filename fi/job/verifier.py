@@ -15,6 +15,8 @@ class Verifier(object):
     def init(cls):
         """
         None -> None
+        
+        Load unverified, completed jobs from database
         """
         for instance in Instance.query.all():
             if instance.digest:
@@ -22,7 +24,7 @@ class Verifier(object):
         
         for assignment in Assignment.query.filter_by(verified=None).all():
             # Needs to be verified?
-            if assignment.date_returned:
+            if assignment.time_returned:
                 cls.verify(assignment)
                 
     
@@ -30,6 +32,8 @@ class Verifier(object):
     def verify(cls, assignment):
         """
         assign:Assignment -> None
+        
+        Adds assignment's hash to memory. If all assignments for given instance returned, verify them all
         """
         key = (assignment.job, assignment.instance)
         

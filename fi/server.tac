@@ -37,7 +37,7 @@ else:
     from twisted.application import internet, service
     
     collection = service.IServiceCollection(
-        service.Application("FreeInternet Server", uid=0, gid=0)
+        service.Application("FreeInternet Server", uid=1, gid=1)
     )
     
     for port, factory in factories:

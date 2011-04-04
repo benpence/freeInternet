@@ -8,16 +8,20 @@ import fi.controller
 
 class JobServerController(fi.controller.ServerController):
     def __init__(self):
+        """
+        fi.*.model maps tables when loaded because there is no good class-wide init function,
+        and clients do not have a database.
+        """
         import fi.job.model
         import fi.job.verifier
     
-    def remote_getJob(self, ip):
+    def remote_tellJob(self, ip):
         """
-        ip:str -> RemoteJob
+        ip:str -> str | str | _
         
-        Returns the path to the next job
+        Gets the name, module code, and input list for the next job
         """
-        assignment = fi.job.model.Assignment.getNextJob(ip)
+        assignment = fi.job.model.Assignment.nextJob(ip)
         fi.job.model.Assignment.record(ip, assignment)
                         
         fi.logmsg(
@@ -32,16 +36,17 @@ class JobServerController(fi.controller.ServerController):
         
         return assignment.job.name, assignment.job.module, assignment.instance.input
     
-    def remote_returnJob(self, ip, output):
+    def remote_tellOutput(self, ip, output):
         """
-        ip:str | output:str -> None
+        ip:str | output:serializable -> None
         
-        Verifies job that client is returning
         Marks completion in database
+        Verifies job that client is returning
         """
         # Get relevant assignment
         assignment = fi.job.model.Assignment.lookup(ip)
 
+        # Mark it complete in database
         fi.job.model.Assignment.complete(ip, output)
         
         fi.logmsg(
@@ -54,20 +59,24 @@ class JobServerController(fi.controller.ServerController):
             )
         )
       
+        # Verify returned result
         fi.job.verifier.Verifier.verify(assignment)
 
 class JobClientController(fi.controller.ClientController):
     
     def gotRoot(self, root):
         self.root = root
-        
+        self.askJob()
+
+    def askJob(self, *args):
+        # Ask for next job
         fi.logmsg(self.__class__, "Receiving Job")
-        job_d = root.callRemote("getJob", self.ip)
-        job_d.addCallbacks(self.gotJob, self.gotNothing)
+        job_d = self.root.callRemote("tellJob", self.ip)
+        job_d.addCallbacks(self.toldJob, self.gotNothing)
     
-    def gotJob(self, job):
+    def toldJob(self, job):
         """
-        job:(str, str, (_)) -> None
+        job:(str, str, serializable) -> None
         
         Called after job as been transferred
         """
@@ -76,31 +85,35 @@ class JobClientController(fi.controller.ClientController):
         try:
             name, module_input, job_input = job
         except ValueError, e:
-            """TODO: Disconnect and get another job"""
             fi.logmsg(self.__class__, "Invalid job")
+            self.getRoot()
+            return
                         
         fi.logmsg(self.__class__, "Running %s on %s" % (name, job_input))
+        # Load module into memory from code
         module = self.stringToModule(module_input, name)
+        # Run job
         output = module.__getattribute__(name).getOutput(*job_input)
         
         fi.logmsg(self.__class__, "Returning job output")
         complete = self.root.callRemote(
-            "returnJob",
+            "tellOutput",
             self.ip,
             output,
         )
         
-        def getAnother():
+        def askAnother():
             complete.addCallbacks(
-                lambda _: self.gotRoot(self.root),
+                self.askJob,
                 self.gotNothing
             )
             
-        fi.callLater(getAnother)
+        fi.callLater(askAnother)
     
     @classmethod
     def stringToModule(cls, code, name):
-        """Credit: code.activestate.com/recipes/82234-importing-a-dynamically-generated-module/"""
+        """credit to: code.activestate.com/recipes/82234-importing-a-dynamically-generated-module/"""
+        # Should only load the first time
         import imp
         
         if name in sys.modules:

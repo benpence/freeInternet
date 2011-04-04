@@ -45,6 +45,8 @@ class DiffieHellmanInput(fi.job.remote.RemoteJobInput):
     # About Task
     DESCRIPTION = "Brute force attack against a Diffie-Hellman-Merkle Key Exchange"
     CREDIT = 5
+    INPUT = "(Prime Number, Primitive Root, Public Key 1, Public Key 2, Start Private Key, Stop Private Key)"
+    OUTPUT = '("Shared Key #") or ("Private key not in range")'
     
     # Constants
     MIN_PRIME = 2 # First prime is 2. DON'T CHANGE THIS

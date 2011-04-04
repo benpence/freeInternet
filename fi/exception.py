@@ -8,10 +8,9 @@ class Error(Exception):
         return repr(self.value)
 
 class UnexpectedError(Error):
+    """Input values are not formatted as expected"""
     pass
     
 class EmptyQuery(UnexpectedError):
+    """Database did not return expected values"""
     pass    
-        
-class ConnectionError(Error):
-    pass

@@ -1,6 +1,6 @@
 var freeInternet = new Object();
 
-freeInternet.ajaxCallback = function(caller, url, send_data, callback){
+freeInternet.ajaxCallback = function(caller, url, callback){
     /*
         ajaxCallback
         
@@ -11,7 +11,8 @@ freeInternet.ajaxCallback = function(caller, url, send_data, callback){
         //url: 'test/test' + (this.count++ % 6) + '.json',
         type: 'GET',
         dataType: 'json',
-        data: send_data,
-        success: function (data){ callback(caller, data) }
+        success: function (data){ callback(caller, data) },
     });
 };
+
+freeInternet.dojo = {};

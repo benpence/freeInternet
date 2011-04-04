@@ -42,6 +42,9 @@ freeInternet.Charts = Class.$extend({
                     }
                 },
             },
+            credits: {
+                enabled: false,
+            },
             xAxis: {
                 /*title: {
                     text: 'Time'
@@ -161,7 +164,6 @@ freeInternet.Charts = Class.$extend({
                 freeInternet.ajaxCallback(
                     self,
                     'creditbandwidth.json',
-                    '',
                     self.updateForever
                 )
             },
@@ -219,7 +221,6 @@ $(function(){
     freeInternet.ajaxCallback(
         charts,
         'creditbandwidth.json',
-        '',
         charts.drawCharts
     );
 });
