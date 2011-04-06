@@ -2,7 +2,6 @@ freeInternet.dojo.Static = Class.$extend({
     createJobs: function(self){
         dojo.require("dojo.data.ItemFileReadStore");
         dojo.require("dijit.Tree");
-        dojo.require("dijit.TooltipDialog");
 
         dojo.addOnLoad(function() {
             var store = new dojo.data.ItemFileReadStore({
@@ -16,10 +15,6 @@ freeInternet.dojo.Static = Class.$extend({
                 },
                 childrenAttrs: ["children"],
             });
-
-            /*var dialog = new dijit.TooltipDialog({
-                content: "item.description"
-            });*/
             
             new dijit.Tree(
                 {
@@ -35,16 +30,6 @@ freeInternet.dojo.Static = Class.$extend({
         dojo.subscribe("jobs_node", dojo.hitch(this, function(message){
             freeInternet.dojo.event.onNodeClick(message.item);
         }));
-        
-        // For close events
-        dojo.subscribe("interface-removeChild", function(child){
-            $.each(self.tabs, function(key, tab){
-                if(tab == child){
-                    delete self.tabs[key];
-                    return;
-                }
-            })
-        });
     },
     
     createLayout: function(self, node_id){
@@ -53,7 +38,8 @@ freeInternet.dojo.Static = Class.$extend({
         
         dojo.addOnLoad(function() {
             self.tab_container = new dijit.layout.TabContainer({
-                style: "height: 100%; width: 100%;"
+                style: "height: 100%; width: 100%;",
+                tabPosition: "left-h",
             },
             node_id);
 

@@ -3,6 +3,7 @@ freeInternet.dojo.event = {
         // Already open?
         if(!!ui.tabs[item.id]){
             ui.tabs[item.id].setContent(content);
+            ui.tab_container.selectChild(ui.tabs[item.id]);
 
         } else {
             // Create tab object
@@ -10,26 +11,46 @@ freeInternet.dojo.event = {
                 content: content,
                 title: title,
                 closable: true,
+                onClose: function(tab_container, tab){
+                    // Select last tab
+                    var tabs = tab_container.getChildren();
+                    if(tabs[tabs.length - 1] != tab){
+                        tab_container.selectChild(tabs[tabs.length - 1]);
+                    } else {
+                        tab_container.selectChild(tabs[tabs.length - 2]);
+                    }
+                    
+                    $.each(ui.tabs, function(key, child){
+                        if(tab == child){
+                            delete ui.tabs[key];
+                            return true;
+                        }
+                    })
+                    
+                    return true;
+                }
             });
 
             // Add to DOM
             ui.tab_container.addChild(ui.tabs[item.id]);
         }
 
-        ui.tab_container.selectChild(ui.tabs[item.id]);
+        
     },
     
     assignmentTab: function(item, grid, title, evt){
         var assignment_id = grid._getItemAttr(evt.rowIndex, 'id');
+        
+        var id = item.id + ' ' + assignment_id;
         
         freeInternet.ajaxCallback(
             this,
             'output-' + item.job_id + '-' + item.instance_id + '-' + assignment_id + '.json',
             function(self, data){
                 self.addTab(
-                    {id: item.id + ' ' + assignment_id},
+                    {id: id},
                     data.output,
-                    title + ' ' + assignment_id
+                    title + '-' + assignment_id
                 );
             }
         );
@@ -49,12 +70,12 @@ freeInternet.dojo.event = {
         {
             field: 'time_issued',
             name: 'Time Issued',
-            width: '200px'
+            width: '165px'
         },
         {
             field: 'time_returned',
             name: 'Time Returned',
-            width: '200px'
+            width: '165px'
         },
         {
             field: 'verified',
@@ -89,7 +110,7 @@ freeInternet.dojo.event = {
         dojo.require("dojo.data.ItemFileWriteStore");
         
         var self = this;
-        var title = item.job + " " + item.instance_id;
+        var title = item.job_id + "-" + item.instance_id;
         dojo.addOnLoad(function(){
             var table = new dojo.data.ItemFileWriteStore({
                 url: 'assignments-' + item.job_id + '-' + item.instance_id + '.json',
@@ -113,7 +134,7 @@ freeInternet.dojo.event = {
                         clientSort: true,
                         //rowSelector: '20px',
                         structure: self.table_columns,
-                        onRowDblClick: function(evt){
+                        onRowClick: function(evt){
                             self.assignmentTab(item, grid, title, evt);
                         },
                         selectionMode: 'none',
@@ -139,7 +160,7 @@ freeInternet.dojo.event = {
         output += "<u>Input</u><br />" + item.input + "<br /><br />";
         output += "<u>Output</u><br />" + item.output + "<br /><br />";
     
-        this.addTab(item, output, item.name);
+        this.addTab(item, output, item.id);
     },
 
     onNodeClick: function(item){

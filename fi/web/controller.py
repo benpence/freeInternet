@@ -109,8 +109,8 @@ class WebController(Site):
                 data.append({
                     'id': ass.id,
                     'ip': ass.client.ip,
-                    'time_issued': ass.time_issued.strftime("%Y/%m/%d %H:%M:%S EST"),
-                    'time_returned': ass.time_returned.strftime("%Y/%m/%d %H:%M:%S EST"),
+                    'time_issued': ass.time_issued.strftime("%Y/%m/%d %H:%M:%S"),
+                    'time_returned': ass.time_returned.strftime("%Y/%m/%d %H:%M:%S"),
                     'verified': ass.verified,
                 })
         
