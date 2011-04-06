@@ -90,8 +90,10 @@ class JobClientController(fi.controller.ClientController):
             return
                         
         fi.logmsg(self.__class__, "Running %s on %s" % (name, job_input))
+        
         # Load module into memory from code
         module = self.stringToModule(module_input, name)
+        
         # Run job
         output = module.__getattribute__(name).getOutput(*job_input)
         

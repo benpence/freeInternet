@@ -15,12 +15,11 @@ def logmsg(cls, message):
         "[%s] %s" % (cls.__name__, message)
     )
 
-def callLater(*args, **kwargs):
+def callLater(f, time=SLEEP):
     """Call first param from *args later with the rest of the parameters"""
     reactor.callLater(
-        SLEEP,
-        *args,
-        **kwargs
+        time,
+        f
     )
 
 def makeUsage(args, rules):

@@ -5,7 +5,7 @@ import fi
 class ServerController(pb.Root):
     """Remote root object called from client"""
     noisy = False
-
+        
 class ClientController(pb.PBClientFactory):
     """Client obtains server root object and calls its remote methods"""
     noisy = False

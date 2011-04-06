@@ -10,6 +10,13 @@ class ThrottleServerController(fi.controller.ServerController):
     def __init__(self):
         import fi.throttle.model
 
+    def rootObject(self, broker):
+        if not hasattr(self, 'started'):
+            self.update()
+            self.started = True
+        
+        return self
+
     @classmethod
     def update(cls):
         # Schedule
@@ -25,6 +32,8 @@ class ThrottleServerController(fi.controller.ServerController):
         
         # Perform network throttling
         ThrottleApplication.throttle(allocations)
+        
+        fi.callLater(cls.update)
 
     def remote_tellBandwidth(self, ip):
         bandwidth = fi.throttle.model.Client.get_by(ip=ip).bandwidth
