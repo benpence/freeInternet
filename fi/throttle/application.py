@@ -22,9 +22,9 @@ class ThrottleApplication(object):
         
         # This right here is essentially the scheduling, converting the credit to proportional numbers
         logs = [
-            (ip,
-              math.log1p(credit + 1))
-             for (ip, credit) in credits]
+            (ip, math.log1p(credit + 1))
+            for (ip, credit) in credits
+        ]
             
         total_log = reduce(
             lambda x, y: x + y,
@@ -85,7 +85,7 @@ class ThrottleApplication(object):
                 )
             )
             
-        #shell.execute()
+        shell.execute()
 
     @classmethod
     def pathloadReceive(cls):
@@ -103,7 +103,7 @@ class ThrottleApplication(object):
             ),
             callback=cls.onPathloadReceive
         )
-        #shell.execute()
+        shell.execute()
     
     @classmethod
     def onPathloadReceive(cls, data):
@@ -151,4 +151,4 @@ class ThrottleApplication(object):
             callback=lambda data: cls.pathloadSend()
         )
         
-        #shell.execute()
+        shell.execute()
