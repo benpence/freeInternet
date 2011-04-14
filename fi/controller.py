@@ -14,7 +14,7 @@ class ClientController(pb.PBClientFactory):
         pb.PBClientFactory.clientConnectionMade(self, connector)
         
         fi.logmsg(self.__class__, "Connected to server")
-        self.ip = connector.transport.getPeer().host
+        self.ip = connector.transport.getHost().host
         self.getRoot()
         
     def clientConnectionLost(self, *args):
